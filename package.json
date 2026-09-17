@@ -1,0 +1,18 @@
+{
+  "name": "atlas-phase42",
+  "version": "4.2.0",
+  "description": "ATLAS Phase 4.2: Self-Optimizing Thresholds & Temporal Pattern Recognition",
+  "main": "16_railway-backend-phase42.js",
+  "scripts": {
+    "start": "node 16_railway-backend-phase42.js",
+    "dev": "node 16_railway-backend-phase42.js",
+    "test": "node test-components.js"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {}
+}
