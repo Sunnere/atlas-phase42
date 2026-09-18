@@ -1,8 +1,5 @@
 import { defineRailway, project, service } from "railway/ica";
 
-// This repository manages only its own resources in the environment. Other
-// repositories export their own partial name.
-// See https://docs.railway.com/infrastructure-as-code#multi-repo-projects
 export const partial = "atlas-phase42";
 
 export default defineRailway(() => {
@@ -10,7 +7,9 @@ export default defineRailway(() => {
     start: "npm start",
     healthcheck: "/health",
     healthcheckTimeout: 100,
-    // builder from CaC: "nixpacks"
+    variables: {
+      PORT: "3000",
+    },
   });
   return project("atlas-phase42", {
     resources: [atlas_phase42],
