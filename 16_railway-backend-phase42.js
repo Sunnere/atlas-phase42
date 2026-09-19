@@ -14,9 +14,8 @@ const cors = (req, res, next) => {
   next();
 };
 
-// CORS Middleware
-
-// CORS Middleware
+// Apply CORS middleware FIRST, before all other middleware
+app.use(cors);
 
 app.use(express.json());
 
