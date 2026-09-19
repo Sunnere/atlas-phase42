@@ -8,31 +8,12 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "16_railway-backend-phase42.js"
+      "src": "/api/status",
+      "dest": "/api/status.js"
     },
     {
       "src": "/(.*)",
       "dest": "16_railway-backend-phase42.js"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Origin, X-Requested-With, Content-Type, Accept"
-        }
-      ]
     }
   ]
 }
