@@ -3,21 +3,19 @@ const app = express();
 
 // CORS Middleware
 const cors = (req, res, next) => {
-  const origin = req.headers.origin || '*'; const allowedOrigin = origin === '*' ? '*' : req.headers.origin;
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   
-  res.header('Access-Control-Allow-Origin', req.headers.origin ? req.headers.origin : '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
   
   next();
 };
 
-app.use(cors);
+// CORS Middleware
+
 app.use(express.json());
 
 // In-memory state
