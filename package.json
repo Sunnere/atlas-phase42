@@ -9,10 +9,12 @@
     "test": "node test-components.js"
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   },
   "dependencies": {
     "express": "^4.18.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "vercel": "^59.23.1"
+  }
 }
