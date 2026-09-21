@@ -1,27 +1,19 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 8080;
 
-// ============================================================
-// CORS MIDDLEWARE - MUST BE FIRST (BEFORE express.json())
-// ============================================================
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
+// CORS FIRST - using npm cors package (more reliable than manual headers)
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept']
+}));
 
-// Now parse JSON
 app.use(express.json());
 
 // ============================================================
-// SELF-OPTIMIZING THRESHOLDS CLASS
+// REST OF CODE (same as before)
 // ============================================================
 class SelfOptimizingThresholds {
   constructor() {
@@ -46,9 +38,6 @@ class SelfOptimizingThresholds {
   }
 }
 
-// ============================================================
-// TEMPORAL PATTERN RECOGNITION CLASS
-// ============================================================
 class TemporalPatternRecognition {
   constructor() {
     this.patterns = {};
@@ -84,9 +73,6 @@ class TemporalPatternRecognition {
   }
 }
 
-// ============================================================
-// STATE & INSTANCES
-// ============================================================
 const thresholds = new SelfOptimizingThresholds();
 const patterns = new TemporalPatternRecognition();
 
@@ -101,16 +87,10 @@ let systemState = {
   }
 };
 
-// ============================================================
-// API ENDPOINTS
-// ============================================================
-
-// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Status endpoint
 app.get('/api/status', (req, res) => {
   res.json({
     system: 'ATLAS Phase 4.2',
@@ -135,7 +115,6 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Cycles endpoint
 app.get('/api/cycles', (req, res) => {
   res.json({
     total: systemState.cycles,
@@ -145,7 +124,6 @@ app.get('/api/cycles', (req, res) => {
   });
 });
 
-// Patterns endpoint
 app.get('/api/patterns', (req, res) => {
   res.json({
     patterns: patterns.getPatterns(),
@@ -154,7 +132,6 @@ app.get('/api/patterns', (req, res) => {
   });
 });
 
-// Thresholds endpoint
 app.get('/api/thresholds', (req, res) => {
   res.json({
     thresholds: thresholds.thresholds,
@@ -163,7 +140,6 @@ app.get('/api/thresholds', (req, res) => {
   });
 });
 
-// Optimize endpoint
 app.post('/api/optimize', (req, res) => {
   const { agent, f1Score } = req.body;
   if (!agent || f1Score === undefined) {
@@ -173,7 +149,6 @@ app.post('/api/optimize', (req, res) => {
   res.json({ message: 'Threshold optimized', threshold: thresholds.getThreshold(agent) });
 });
 
-// Record pattern endpoint
 app.post('/api/patterns/record', (req, res) => {
   const { eventType } = req.body;
   if (!eventType) {
@@ -183,7 +158,6 @@ app.post('/api/patterns/record', (req, res) => {
   res.json({ message: 'Event recorded', eventType });
 });
 
-// Orchestrate endpoint
 app.post('/api/orchestrate', (req, res) => {
   systemState.cycles++;
   systemState.lastCycleId = systemState.cycles - 1;
@@ -197,7 +171,6 @@ app.post('/api/orchestrate', (req, res) => {
   });
 });
 
-// Dashboard
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -222,7 +195,6 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Start server
 app.listen(port, () => {
   console.log(`✅ ATLAS Phase 4.2 Backend running on http://localhost:${port}`);
   console.log('');
