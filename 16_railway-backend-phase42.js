@@ -3,17 +3,26 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 8080;
 
-// CORS FIRST - using npm cors package (more reliable than manual headers)
+// CORS via npm package
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept']
 }));
 
+// EXPLICIT CORS HEADERS - fallback for Railway-hikari stripping
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.setHeader('Access-Control-Max-Age', '3600');
+  next();
+});
+
 app.use(express.json());
 
 // ============================================================
-// REST OF CODE (same as before)
+// REST OF CODE
 // ============================================================
 class SelfOptimizingThresholds {
   constructor() {
