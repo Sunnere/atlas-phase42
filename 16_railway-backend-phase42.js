@@ -17,7 +17,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// In-memory state
+// In-memory state storage
 const state = {
   thresholds: {
     agent_a: { current: 0.65, mode: 'conservative', cycle: 0 },
