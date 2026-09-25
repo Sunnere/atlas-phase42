@@ -1,0 +1,17 @@
+{
+  "name": "atlas-phase42",
+  "version": "1.0.0",
+  "description": "Atlas Phase 4.2 Application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+
