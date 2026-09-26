@@ -1,6 +1,12 @@
+const path = require("path");
 const express = require('express');
 const cors = require('cors');
 const app = express();
+
+app.use("/dashboard", express.static(path.join(__dirname, "public/dashboard")));
+app.get("/dashboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/dashboard/index.html"));
+});
 const port = process.env.PORT || 8080;
 
 // CORS via npm package
