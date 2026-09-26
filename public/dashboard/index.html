@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATLAS Phase 4.3 - Agent Orchestration Dashboard</title>
+    <style>
+        :root {
+            --surface-light: #ffffff;
+            --surface-dark: #1a1a1a;
+            --bg-light: #f5f5f5;
+            --bg-dark: #0d0d0d;
+            --text-primary-light: #1a1a1a;
+            --text-primary-dark: #f5f5f5;
+            --text-secondary-light: #666666;
+            --text-secondary-dark: #aaaaaa;
+            --border-light: #e0e0e0;
+            --border-dark: #333333;
+
+            /* Categorical hues (fixed order - sequential assignment) */
+            --hue-thailand: #2563eb;      /* Blue */
+            --hue-bonusshop: #7c3aed;     /* Purple */
+            --hue-trading: #0891b2;       /* Cyan */
+
+            /* Sequential (magnitude) */
+            --seq-light: #e0f2fe;
+            --seq-medium: #0284c7;
+            --seq-dark: #0c4a6e;
+
+            /* Diverging (polarity: good/bad) */
+            --good: #10b981;
+            --warning: #f59e0b;
+            --critical: #ef4444;
+
+            /* Surface gap for stacked segments */
+            --gap: 2px;
+        }
+
+        [data-theme="dark"] {
+            --surface: var(--surface-dark);
+            --bg: var(--bg-dark);
+            --text-primary: var(--text-primary-dark);
+            --text-secondary: var(--text-secondary-dark);
+            --border: var(--border-dark);
+        }
+
+        [data-theme="light"] {
+            --surface: var(--surface-light);
+            --bg: var(--bg-light);
+            --text-primary: var(--text-primary-light);
+            --text-secondary: var(--text-secondary-light);
+            --border: var(--border-light);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            background-color: var(--good);
+            color: white;
+        }
+
+        .status-badge.warning {
+            background-color: var(--warning);
+        }
+
+        .status-badge.critical {
+            background-color: var(--critical);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background-color: var(--surface);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--border);
+        }
+
+        .refresh-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+
+        /* Summary metrics grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .metric-secondary {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        /* Agent status grid */
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .agent-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow: hidden;
+        }
+
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .agent-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .agent-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--good);
+        }
+
+        .agent-status.warning {
+            background-color: var(--warning);
+        }
+
+        .agent-status.critical {
+            background-color: var(--critical);
+        }
+
+        .agent-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--gap);
+        }
+
+        .agent-stat:last-child {
+            border-bottom: none;
+        }
+
+        .agent-stat-label {
+            color: var(--text-secondary);
+        }
+
+        .agent-stat-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Chart container */
+        .chart-container {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            min-height: 300px;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* Time series chart */
+        .time-series-svg {
+            min-height: 280px;
+        }
+
+        /* Risk breakdown pie chart */
+        .risk-breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .risk-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .risk-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .risk-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .risk-dot.high {
+            background-color: var(--critical);
+        }
+
+        .risk-dot.medium {
+            background-color: var(--warning);
+        }
+
+        .risk-dot.low {
+            background-color: var(--good);
+        }
+
+        .pie-svg {
+            min-height: 250px;
+        }
+
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--seq-medium);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .agents-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .risk-breakdown {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="container">
+        <div class="header">
+            <h1>🔄 ATLAS Phase 4.3 - Agent Orchestration</h1>
+            <div class="controls">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark</button>
+                <span class="refresh-info" id="refreshInfo">Auto-refresh: 5s</span>
+            </div>
+        </div>
+
+        <!-- Summary Metrics -->
+        <div class="metrics-grid" id="metricsGrid">
+            <div class="metric-card">
+                <div class="metric-label">Total Requests (24h)</div>
+                <div class="metric-value" id="totalRequests">0</div>
+                <div class="metric-secondary">↑ Real-time throughput</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avg Latency</div>
+                <div class="metric-value" id="avgLatency">--</div>
+                <div class="metric-secondary">Orchestration time</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Success Rate</div>
+                <div class="metric-value" id="successRate">--</div>
+                <div class="metric-secondary">Request completion</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Active Agents</div>
+                <div class="metric-value" id="activeAgents">3</div>
+                <div class="metric-secondary" id="agentStatus">All operational</div>
+            </div>
+        </div>
+
+        <!-- Agent Health Section -->
+        <div class="section">
+            <h2 class="section-title">Agent Health Status</h2>
+            <div class="agents-grid" id="agentsGrid"></div>
+        </div>
+
+        <!-- Request Volume Timeline -->
+        <div class="section">
+            <h2 class="section-title">Request Volume (Last Hour)</h2>
+            <div class="chart-container">
+                <div id="timeSeriesChart" class="loading">
+                    <div class="spinner"></div>
+                    Loading chart...
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Analysis -->
+        <div class="section">
+            <h2 class="section-title">Risk Classification Breakdown</h2>
+            <div class="chart-container">
+                <div class="risk-breakdown">
+                    <div id="riskList" class="risk-list"></div>
+                    <div id="riskChart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="section">
+            <h2 class="section-title">System Status</h2>
+            <div class="metric-card">
+                <div class="metric-label">Backend Service</div>
+                <div id="backendStatus" style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                    <div class="agent-status"></div>
+                    <span>Checking...</span>
+                </div>
+                <div class="metric-secondary" id="backendUrl">https://fulfilling-charm-production-b137.up.railway.app</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const BACKEND_URL = 'https://fulfilling-charm-production-b137.up.railway.app';
+        const REFRESH_INTERVAL = 5000; // 5 seconds
+
+        // Agent definitions (fixed categorical order)
+        const AGENTS = [
+            { id: 'thailand-property', name: 'Thailand Property Agent', color: '#2563eb' },
+            { id: 'bonusshop-marketing', name: 'BonusShop Marketing Agent', color: '#7c3aed' },
+            { id: 'trading-investment', name: 'Trading & Investment Agent', color: '#0891b2' }
+        ];
+
+        // Mock data store (in production, this would come from backend)
+        let dashboardData = {
+            totalRequests: 0,
+            avgLatency: 0,
+            successRate: 100,
+            agents: {},
+            riskBreakdown: { HIGH: 0, MEDIUM: 0, LOW: 0 },
+            requestTimeline: []
+        };
+
+        // Initialize agents
+        AGENTS.forEach(agent => {
+            dashboardData.agents[agent.id] = {
+                name: agent.name,
+                status: 'operational',
+                uptime: 99.8,
+                lastResponse: 145,
+                requestsLastHour: 0,
+                avgLatency: 0
+            };
+        });
+
+        // Generate mock request timeline (last 60 minutes)
+        function generateMockTimeline() {
+            const timeline = [];
+            const now = Date.now();
+            for (let i = 59; i >= 0; i--) {
+                timeline.push({
+                    timestamp: new Date(now - i * 60000),
+                    thailand: Math.floor(Math.random() * 15) + 5,
+                    bonusshop: Math.floor(Math.random() * 12) + 4,
+                    trading: Math.floor(Math.random() * 10) + 3
+                });
+            }
+            return timeline;
+        }
+
+        // Fetch backend status
+        async function fetchBackendStatus() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`, { mode: 'cors' });
+                if (response.ok) {
+                    return { healthy: true, message: 'Connected' };
+                }
+                return { healthy: false, message: 'Health check failed' };
+            } catch (error) {
+                return { healthy: false, message: 'Connection error' };
+            }
+        }
+
+        // Update metrics display
+        function updateMetrics() {
+            document.getElementById('totalRequests').textContent =
+                dashboardData.requestTimeline.reduce((sum, point) =>
+                    sum + point.thailand + point.bonusshop + point.trading, 0);
+
+            const validLatencies = Object.values(dashboardData.agents)
+                .filter(a => a.avgLatency > 0)
+                .map(a => a.avgLatency);
+
+            if (validLatencies.length > 0) {
+                const avg = validLatencies.reduce((a, b) => a + b) / validLatencies.length;
+                document.getElementById('avgLatency').textContent = `${Math.round(avg)}ms`;
+            }
+
+            document.getElementById('successRate').textContent =
+                `${dashboardData.successRate.toFixed(1)}%`;
+        }
+
+        // Render agent cards
+        function renderAgents() {
+            const grid = document.getElementById('agentsGrid');
+            grid.innerHTML = '';
+
+            AGENTS.forEach(agent => {
+                const data = dashboardData.agents[agent.id];
+                const statusClass = data.status === 'operational' ? '' :
+                    data.uptime < 90 ? 'critical' : 'warning';
+
+                grid.innerHTML += `
+                    <div class="agent-card">
+                        <div class="agent-header">
+                            <span class="agent-name">${data.name}</span>
+                            <div class="agent-status ${statusClass}"></div>
+                        </div>
+                        <div class="agent-stat">
+                            <span class="agent-stat-label">Status</span>
+                            <span class="agent-stat-value">${data.status}</span>
+                        </div>
+                        <div class="agent-stat">
+                            <span class="agent-stat-label">Uptime</span>
+                            <span class="agent-stat-value">${data.uptime.toFixed(2)}%</span>
+                        </div>
+                        <div class="agent-stat">
+                            <span class="agent-stat-label">Last Response</span>
+                            <span class="agent-stat-value">${data.lastResponse}ms</span>
+                        </div>
+                        <div class="agent-stat">
+                            <span class="agent-stat-label">Requests (1h)</span>
+                            <span class="agent-stat-value">${data.requestsLastHour}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Render time series chart (SVG bar chart)
+        function renderTimeSeriesChart() {
+            const container = document.getElementById('timeSeriesChart');
+            const timeline = dashboardData.requestTimeline;
+
+            if (timeline.length === 0) {
+                container.innerHTML = '<div class="loading">No data available</div>';
+                return;
+            }
+
+            const width = container.clientWidth;
+            const height = 250;
+            const padding = 40;
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            const barWidth = chartWidth / timeline.length / 3.5;
+            const maxRequests = 30;
+
+            let svg = `<svg class="time-series-svg" viewBox="0 0 ${width} ${height}">`;
+
+            // Grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = padding + (chartHeight / 5) * i;
+                const value = Math.round((maxRequests / 5) * (5 - i));
+                svg += `
+                    <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}"
+                          stroke="#e0e0e0" stroke-width="1" opacity="0.5"/>
+                    <text x="${padding - 8}" y="${y + 4}" text-anchor="end" font-size="11"
+                          fill="#666" font-family="system-ui">${value}</text>
+                `;
+            }
+
+            // Axis labels
+            svg += `<line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#333" stroke-width="1"/>`;
+            svg += `<line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#333" stroke-width="1"/>`;
+            svg += `<text x="${width / 2}" y="${height - 8}" text-anchor="middle" font-size="12" fill="#666" font-family="system-ui">Time (Last Hour)</text>`;
+            svg += `<text x="15" y="${height / 2}" text-anchor="middle" font-size="12" fill="#666" font-family="system-ui" transform="rotate(-90 15 ${height / 2})">Requests</text>`;
+
+            // Bars with stacked segments
+            timeline.forEach((point, i) => {
+                const x = padding + (chartWidth / timeline.length) * i + barWidth;
+                const total = point.thailand + point.bonusshop + point.trading;
+
+                // Thailand bar
+                const h1 = (point.thailand / maxRequests) * chartHeight;
+                svg += `<rect x="${x}" y="${height - padding - h1}" width="${barWidth - 2}" height="${h1}"
+                        fill="#2563eb" opacity="0.8"/>`;
+
+                // BonusShop bar
+                const h2 = (point.bonusshop / maxRequests) * chartHeight;
+                svg += `<rect x="${x + barWidth}" y="${height - padding - h2}" width="${barWidth - 2}" height="${h2}"
+                        fill="#7c3aed" opacity="0.8"/>`;
+
+                // Trading bar
+                const h3 = (point.trading / maxRequests) * chartHeight;
+                svg += `<rect x="${x + barWidth * 2}" y="${height - padding - h3}" width="${barWidth - 2}" height="${h3}"
+                        fill="#0891b2" opacity="0.8"/>`;
+            });
+
+            // Legend
+            svg += `
+                <g transform="translate(${width - 160}, ${padding + 10})">
+                    <rect x="0" y="0" width="150" height="70" fill="white" stroke="#ddd" stroke-width="1" rx="4"/>
+                    <circle cx="10" cy="15" r="4" fill="#2563eb"/>
+                    <text x="20" y="19" font-size="12" fill="#333" font-family="system-ui">Thailand</text>
+                    <circle cx="10" cy="35" r="4" fill="#7c3aed"/>
+                    <text x="20" y="39" font-size="12" fill="#333" font-family="system-ui">BonusShop</text>
+                    <circle cx="10" cy="55" r="4" fill="#0891b2"/>
+                    <text x="20" y="59" font-size="12" fill="#333" font-family="system-ui">Trading</text>
+                </g>
+            `;
+
+            svg += `</svg>`;
+            container.innerHTML = svg;
+        }
+
+        // Render risk breakdown pie chart
+        function renderRiskChart() {
+            const total = Object.values(dashboardData.riskBreakdown).reduce((a, b) => a + b);
+            if (total === 0) return;
+
+            // Risk list
+            const riskList = document.getElementById('riskList');
+            riskList.innerHTML = `
+                <div class="risk-item">
+                    <div class="risk-dot high"></div>
+                    <span>High Risk: <strong>${dashboardData.riskBreakdown.HIGH}</strong></span>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-dot medium"></div>
+                    <span>Medium Risk: <strong>${dashboardData.riskBreakdown.MEDIUM}</strong></span>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-dot low"></div>
+                    <span>Low Risk: <strong>${dashboardData.riskBreakdown.LOW}</strong></span>
+                </div>
+            `;
+
+            // Pie chart
+            const container = document.getElementById('riskChart');
+            const size = 200;
+            const cx = size / 2;
+            const cy = size / 2;
+            const radius = 70;
+
+            const highPercent = dashboardData.riskBreakdown.HIGH / total;
+            const mediumPercent = dashboardData.riskBreakdown.MEDIUM / total;
+
+            let svg = `<svg class="pie-svg" viewBox="0 0 ${size} ${size}">`;
+
+            let angle = -90;
+
+            // High risk slice
+            if (highPercent > 0) {
+                const sliceAngle = highPercent * 360;
+                const startAngle = angle * Math.PI / 180;
+                const endAngle = (angle + sliceAngle) * Math.PI / 180;
+                const x1 = cx + radius * Math.cos(startAngle);
+                const y1 = cy + radius * Math.sin(startAngle);
+                const x2 = cx + radius * Math.cos(endAngle);
+                const y2 = cy + radius * Math.sin(endAngle);
+                const largeArc = sliceAngle > 180 ? 1 : 0;
+
+                svg += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z"
+                        fill="#ef4444" opacity="0.8"/>`;
+                angle += sliceAngle;
+            }
+
+            // Medium risk slice
+            if (mediumPercent > 0) {
+                const sliceAngle = mediumPercent * 360;
+                const startAngle = angle * Math.PI / 180;
+                const endAngle = (angle + sliceAngle) * Math.PI / 180;
+                const x1 = cx + radius * Math.cos(startAngle);
+                const y1 = cy + radius * Math.sin(startAngle);
+                const x2 = cx + radius * Math.cos(endAngle);
+                const y2 = cy + radius * Math.sin(endAngle);
+                const largeArc = sliceAngle > 180 ? 1 : 0;
+
+                svg += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z"
+                        fill="#f59e0b" opacity="0.8"/>`;
+                angle += sliceAngle;
+            }
+
+            // Low risk slice
+            const lowPercent = 1 - highPercent - mediumPercent;
+            if (lowPercent > 0) {
+                const sliceAngle = lowPercent * 360;
+                const startAngle = angle * Math.PI / 180;
+                const endAngle = (angle + sliceAngle) * Math.PI / 180;
+                const x1 = cx + radius * Math.cos(startAngle);
+                const y1 = cy + radius * Math.sin(startAngle);
+                const x2 = cx + radius * Math.cos(endAngle);
+                const y2 = cy + radius * Math.sin(endAngle);
+                const largeArc = sliceAngle > 180 ? 1 : 0;
+
+                svg += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z"
+                        fill="#10b981" opacity="0.8"/>`;
+            }
+
+            svg += `</svg>`;
+            container.innerHTML = svg;
+        }
+
+        // Update backend status
+        async function updateBackendStatus() {
+            const status = await fetchBackendStatus();
+            const elem = document.getElementById('backendStatus');
+            const statusClass = status.healthy ? '' : 'critical';
+            elem.innerHTML = `
+                <div class="agent-status ${statusClass}"></div>
+                <span>${status.healthy ? 'Connected' : 'Disconnected'} - ${status.message}</span>
+            `;
+        }
+
+        // Generate initial mock data with realistic patterns
+        function initializeMockData() {
+            dashboardData.requestTimeline = generateMockTimeline();
+
+            // Calculate agent stats from timeline
+            AGENTS.forEach(agent => {
+                const requests = dashboardData.requestTimeline.reduce((sum, point) => {
+                    const key = agent.id.split('-')[0]; // Get first word
+                    return sum + (point[key] || 0);
+                }, 0);
+
+                dashboardData.agents[agent.id].requestsLastHour = requests;
+                dashboardData.agents[agent.id].avgLatency = Math.floor(Math.random() * 100) + 50;
+            });
+
+            // Risk breakdown (realistic distribution)
+            const totalRisks = 1200;
+            dashboardData.riskBreakdown.HIGH = Math.floor(totalRisks * 0.15);   // 15%
+            dashboardData.riskBreakdown.MEDIUM = Math.floor(totalRisks * 0.35); // 35%
+            dashboardData.riskBreakdown.LOW = totalRisks - dashboardData.riskBreakdown.HIGH - dashboardData.riskBreakdown.MEDIUM;
+        }
+
+        // Update all displays
+        function updateDashboard() {
+            updateMetrics();
+            renderAgents();
+            renderTimeSeriesChart();
+            renderRiskChart();
+            updateBackendStatus();
+        }
+
+        // Theme toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme') || 'light';
+            const next = current === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', next);
+
+            const btn = document.querySelector('.theme-toggle');
+            btn.textContent = next === 'light' ? '🌙 Dark' : '☀️ Light';
+
+            localStorage.setItem('theme', next);
+        }
+
+        // Initialize
+        function init() {
+            // Restore theme preference
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            const btn = document.querySelector('.theme-toggle');
+            btn.textContent = savedTheme === 'light' ? '🌙 Dark' : '☀️ Light';
+
+            // Load initial data
+            initializeMockData();
+            updateDashboard();
+
+            // Auto-refresh
+            setInterval(() => {
+                // In production, fetch fresh data from backend
+                // For now, regenerate mock data
+                dashboardData.requestTimeline = generateMockTimeline();
+                updateDashboard();
+            }, REFRESH_INTERVAL);
+        }
+
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
