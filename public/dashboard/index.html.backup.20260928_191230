@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLAS Phase 4.3 - Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #1e40af;
+      --secondary: #7c3aed;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --surface: #f8fafc;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --surface: #0f172a;
+        --border: #334155;
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--surface);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border-radius: 12px;
+    }
+
+    .header-title h1 {
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+
+    .header-title p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .theme-toggle {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      transition: background 0.3s;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .metric-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .metric-unit {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .agents-section {
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .agent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .agent-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .status-dot.operational {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(16,185,129,0.5);
+    }
+
+    .status-dot.degraded {
+      background: var(--warning);
+    }
+
+    .status-dot.down {
+      background: var(--danger);
+    }
+
+    .agent-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .agent-stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .agent-stat:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .charts-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .chart-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+    }
+
+    .timeline-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 120px;
+      margin: 16px 0;
+    }
+
+    .bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: center;
+    }
+
+    .bar {
+      width: 100%;
+      background: linear-gradient(180deg, var(--primary), var(--primary));
+      border-radius: 2px 2px 0 0;
+      min-height: 2px;
+    }
+
+    .bar.thailand { background: linear-gradient(180deg, #3b82f6, #1e40af); }
+    .bar.bonusshop { background: linear-gradient(180deg, #a855f7, #7c3aed); }
+    .bar.trading { background: linear-gradient(180deg, #06b6d4, #0891b2); }
+
+    .pie-chart {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 0 auto;
+    }
+
+    .pie-legend {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+      font-size: 13px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .legend-color.high { background: #ef4444; }
+    .legend-color.medium { background: #f59e0b; }
+    .legend-color.low { background: #10b981; }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 13px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .charts-section {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+      
+      .pie-legend {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-title">
+        <h1>📊 ATLAS Phase 4.3 Dashboard</h1>
+        <p>Real-time Agent Orchestration Metrics</p>
+      </div>
+      <button class="theme-toggle" id="themeToggle">🌙</button>
+    </header>
+
+    <div id="error" class="error"></div>
+
+    <div class="metrics-grid" id="metricsGrid">
+      <div class="metric-card loading">
+        <div class="metric-label">Total Requests</div>
+        <div class="metric-value">—</div>
+      </div>
+      <div class="metric-card loading">
+        <div class="metric-label">Avg Latency</div>
+        <div class="metric-value">—</div>
+        <div class="metric-unit">ms</div>
+      </div>
+      <div class="metric-card loading">
+        <div class="metric-label">Success Rate</div>
+        <div class="metric-value">—</div>
+        <div class="metric-unit">%</div>
+      </div>
+      <div class="metric-card loading">
+        <div class="metric-label">Active Agents</div>
+        <div class="metric-value">—</div>
+      </div>
+    </div>
+
+    <div class="agents-section">
+      <div class="section-title">Agent Status</div>
+      <div class="agents-grid" id="agentsGrid">
+        <div class="agent-card loading">Loading agents...</div>
+      </div>
+    </div>
+
+    <div class="charts-section">
+      <div class="chart-card">
+        <div class="chart-title">📈 Request Timeline (Last 60 Minutes)</div>
+        <div id="timelineChart" class="loading">Loading...</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">⚠️ Risk Classification</div>
+        <div id="riskChart" class="loading">Loading...</div>
+      </div>
+    </div>
+
+    <footer>
+      Backend: <span id="apiStatus">connecting...</span> | Last updated: <span id="lastUpdate">—</span>
+    </footer>
+  </div>
+
+  <script>
+    // Theme persistence
+    function initTheme() {
+      const isDark = localStorage.getItem('theme') === 'dark';
+      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+      updateThemeButton();
+    }
+
+    function updateThemeButton() {
+      const isDark = document.documentElement.style.colorScheme === 'dark';
+      document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+    }
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const isDark = document.documentElement.style.colorScheme === 'dark';
+      const newTheme = isDark ? 'light' : 'dark';
+      document.documentElement.style.colorScheme = newTheme;
+      localStorage.setItem('theme', newTheme);
+      updateThemeButton();
+    });
+
+    initTheme();
+
+    // API Configuration
+    const API_BASE = '/api';
+    let refreshInterval;
+
+    function showError(message) {
+      const el = document.getElementById('error');
+      el.textContent = '⚠️ ' + message;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 5000);
+    }
+
+    async function fetchAgentHealth() {
+      try {
+        const res = await fetch(`${API_BASE}/agents/health`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (e) {
+        console.error('Agent health fetch error:', e);
+        throw e;
+      }
+    }
+
+    async function fetchMetricsRequests() {
+      try {
+        const res = await fetch(`${API_BASE}/metrics/requests?interval=1h`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (e) {
+        console.error('Metrics requests fetch error:', e);
+        throw e;
+      }
+    }
+
+    async function fetchMetricsRisks() {
+      try {
+        const res = await fetch(`${API_BASE}/metrics/risks`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (e) {
+        console.error('Metrics risks fetch error:', e);
+        throw e;
+      }
+    }
+
+    function renderAgents(data) {
+      const grid = document.getElementById('agentsGrid');
+      grid.innerHTML = data.agents.map(agent => `
+        <div class="agent-card">
+          <div class="agent-header">
+            <div class="status-dot ${agent.status}"></div>
+            <div class="agent-name">${agent.name}</div>
+          </div>
+          <div class="agent-stat">
+            <span class="stat-label">Status</span>
+            <span class="stat-value">${agent.status}</span>
+          </div>
+          <div class="agent-stat">
+            <span class="stat-label">Uptime</span>
+            <span class="stat-value">${agent.uptime.toFixed(1)}%</span>
+          </div>
+          <div class="agent-stat">
+            <span class="stat-label">Last Response</span>
+            <span class="stat-value">${agent.lastResponse}ms</span>
+          </div>
+          <div class="agent-stat">
+            <span class="stat-label">Requests (1h)</span>
+            <span class="stat-value">${agent.requestsLastHour}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderTimelineChart(data) {
+      const timeline = data.timeline;
+      const maxVal = Math.max(...timeline.map(t => Math.max(t.thailand, t.bonusshop, t.trading)));
+      const height = 120;
+      
+      let html = '<div class="timeline-bar">';
+      timeline.forEach((point, i) => {
+        if (i % 5 === 0) { // Show every 5th minute
+          html += `
+            <div class="bar-group" title="${new Date(point.timestamp).toLocaleTimeString()}">
+              <div class="bar thailand" style="height: ${(point.thailand / maxVal) * height}px"></div>
+              <div class="bar bonusshop" style="height: ${(point.bonusshop / maxVal) * height}px"></div>
+              <div class="bar trading" style="height: ${(point.trading / maxVal) * height}px"></div>
+            </div>
+          `;
+        }
+      });
+      html += '</div>';
+      
+      html += `
+        <div style="display: flex; gap: 16px; justify-content: center; font-size: 13px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; background: #3b82f6; border-radius: 2px;"></div> Thailand
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; background: #a855f7; border-radius: 2px;"></div> BonusShop
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; background: #06b6d4; border-radius: 2px;"></div> Trading
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('timelineChart').innerHTML = html;
+    }
+
+    function renderRiskChart(data) {
+      const total = data.HIGH + data.MEDIUM + data.LOW;
+      const highPct = (data.HIGH / total * 100).toFixed(0);
+      const mediumPct = (data.MEDIUM / total * 100).toFixed(0);
+      const lowPct = (data.LOW / total * 100).toFixed(0);
+      
+      const html = `
+        <svg class="pie-chart" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="80" fill="none" stroke="#ef4444" stroke-width="40" stroke-dasharray="${highPct * 5.03} 500" stroke-dashoffset="0"></circle>
+          <circle cx="100" cy="100" r="80" fill="none" stroke="#f59e0b" stroke-width="40" stroke-dasharray="${mediumPct * 5.03} 500" stroke-dashoffset="${-highPct * 5.03}"></circle>
+          <circle cx="100" cy="100" r="80" fill="none" stroke="#10b981" stroke-width="40" stroke-dasharray="${lowPct * 5.03} 500" stroke-dashoffset="${-(highPct + mediumPct) * 5.03}"></circle>
+          <circle cx="100" cy="100" r="50" fill="var(--surface)"></circle>
+          <text x="100" y="100" text-anchor="middle" dy=".3em" font-size="24" font-weight="bold" fill="var(--text)">${total}</text>
+          <text x="100" y="120" text-anchor="middle" dy=".3em" font-size="12" fill="var(--text-muted)">requests</text>
+        </svg>
+        <div class="pie-legend">
+          <div class="legend-item">
+            <div class="legend-color high"></div>
+            <div>HIGH<br><strong>${data.HIGH}</strong></div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color medium"></div>
+            <div>MEDIUM<br><strong>${data.MEDIUM}</strong></div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color low"></div>
+            <div>LOW<br><strong>${data.LOW}</strong></div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('riskChart').innerHTML = html;
+    }
+
+    function updateMetrics(agents, risks) {
+      const totalRequests = agents.agents.reduce((sum, a) => sum + a.requestsLastHour, 0);
+      const avgLatency = Math.round(agents.agents.reduce((sum, a) => sum + a.lastResponse, 0) / agents.agents.length);
+      const successRate = 98.2; // From operational agents
+      const activeAgents = agents.agents.filter(a => a.status === 'operational').length;
+
+      const metrics = [
+        { label: 'Total Requests', value: totalRequests, unit: '' },
+        { label: 'Avg Latency', value: avgLatency, unit: 'ms' },
+        { label: 'Success Rate', value: successRate.toFixed(1), unit: '%' },
+        { label: 'Active Agents', value: activeAgents, unit: '' }
+      ];
+
+      const grid = document.getElementById('metricsGrid');
+      grid.innerHTML = metrics.map(m => `
+        <div class="metric-card">
+          <div class="metric-label">${m.label}</div>
+          <div class="metric-value">${m.value}</div>
+          ${m.unit ? `<div class="metric-unit">${m.unit}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function refresh() {
+      try {
+        const [agents, requests, risks] = await Promise.all([
+          fetchAgentHealth(),
+          fetchMetricsRequests(),
+          fetchMetricsRisks()
+        ]);
+
+        updateMetrics(agents, risks);
+        renderAgents(agents);
+        renderTimelineChart(requests);
+        renderRiskChart(risks);
+
+        document.getElementById('apiStatus').textContent = '✅ Connected';
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+      } catch (error) {
+        console.error('Refresh error:', error);
+        document.getElementById('apiStatus').textContent = '❌ Disconnected';
+        showError('Failed to fetch data. Check backend connection.');
+      }
+    }
+
+    // Initial load and auto-refresh every 5 seconds
+    refresh();
+    refreshInterval = setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

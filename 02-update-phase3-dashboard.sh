@@ -1,3 +1,49 @@
+#!/bin/bash
+
+# ============================================================================
+# ATLAS Phase 3: Update Dashboard with Date Range Picker
+# Usage: bash 02-update-phase3-dashboard.sh
+#
+# This script:
+# 1. Backs up current dashboard
+# 2. Installs new dashboard with date range features
+# 3. Verifies the file is correct
+# ============================================================================
+
+set -e
+
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${BLUE}📊 ATLAS Phase 3: Dashboard Update${NC}"
+echo "===================================="
+echo ""
+
+# Step 1: Verify we're in the right directory
+if [ ! -d "public/dashboard" ]; then
+  echo -e "${YELLOW}⚠️  public/dashboard not found, creating...${NC}"
+  mkdir -p public/dashboard
+fi
+
+DASHBOARD_FILE="public/dashboard/index.html"
+
+echo -e "${BLUE}Step 1: Backing up current dashboard${NC}"
+if [ -f "$DASHBOARD_FILE" ]; then
+  BACKUP_FILE="public/dashboard/index.html.backup.$(date +%Y%m%d_%H%M%S)"
+  cp "$DASHBOARD_FILE" "$BACKUP_FILE"
+  echo -e "${GREEN}✅ Backup: $BACKUP_FILE${NC}"
+else
+  echo -e "${YELLOW}ℹ️  No existing dashboard found (first time)${NC}"
+fi
+
+echo ""
+echo -e "${BLUE}Step 2: Installing Phase 3 Dashboard${NC}"
+
+# Create the new dashboard
+cat > "$DASHBOARD_FILE" << 'DASHBOARD_EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -746,3 +792,35 @@
   </script>
 </body>
 </html>
+DASHBOARD_EOF
+
+echo -e "${GREEN}✅ New dashboard installed${NC}"
+
+# Step 3: Verify file
+echo ""
+echo -e "${BLUE}Step 3: Verifying installation${NC}"
+FILE_SIZE=$(wc -c < "$DASHBOARD_FILE")
+LINES=$(wc -l < "$DASHBOARD_FILE")
+echo "File size: $(echo "$FILE_SIZE / 1024" | bc)KB"
+echo "Lines: $LINES"
+
+if grep -q "Phase 3" "$DASHBOARD_FILE"; then
+  echo -e "${GREEN}✅ Phase 3 dashboard verified${NC}"
+else
+  echo -e "${RED}❌ Dashboard verification failed${NC}"
+  exit 1
+fi
+
+echo ""
+echo -e "${GREEN}✅ Dashboard update complete!${NC}"
+echo ""
+echo -e "${YELLOW}📋 Next steps:${NC}"
+echo "1. Verify dashboard: open $DASHBOARD_FILE in browser"
+echo "2. Test theme toggle: click 🌙/☀️ button"
+echo "3. Test date ranges: select 24h, 1 week, 1 month"
+echo "4. Deploy: git add -A && git commit -m 'feat(phase3): Add dashboard date range picker' && git push origin master"
+echo ""
+if [ ! -z "$BACKUP_FILE" ]; then
+  echo -e "${YELLOW}📁 Backup location:${NC} $BACKUP_FILE"
+  echo "   (Restore with: cp $BACKUP_FILE $DASHBOARD_FILE)"
+fi
