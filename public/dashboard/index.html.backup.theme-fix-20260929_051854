@@ -497,7 +497,7 @@
     }
 
     function updateThemeButton() {
-      document.getElementById('themeToggle').textContent = state.theme === 'light' ? '🌙 Dark' : '☀️ Light';
+      document.getElementById('themeToggle').textContent = state.theme === 'dark' ? '☀️' : '🌙';
     }
 
     function calculateDateRange(minutes) {
@@ -736,7 +736,7 @@
       });
     });
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('load', () => {
       initTheme();
       const { startDate, endDate } = calculateDateRange(60);
       setDateRangeInputs(startDate, endDate);
