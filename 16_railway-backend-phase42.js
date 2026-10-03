@@ -223,3 +223,8 @@ app.listen(port, () => {
   console.log('Press Ctrl+C to stop.');
   console.log('');
 });
+
+// Phase 4.5: Risk Agent Integration
+const { setupRiskRoutes } = require("./src/routes/riskRoutes");
+setupRiskRoutes(app);
+console.log("✅ Risk Agent routes initialized: /api/risk/*");
