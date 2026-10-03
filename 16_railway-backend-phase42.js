@@ -210,6 +210,10 @@ app.get('/', (req, res) => {
   `);
 });
 
+// Phase 4.5: Risk Agent Integration
+const { setupRiskRoutes } = require("./src/routes/riskRoutes");
+setupRiskRoutes(app);
+
 app.listen(port, () => {
   console.log(`✅ ATLAS Phase 4.2 Backend running on http://localhost:${port}`);
   console.log('');
@@ -224,7 +228,3 @@ app.listen(port, () => {
   console.log('');
 });
 
-// Phase 4.5: Risk Agent Integration
-const { setupRiskRoutes } = require("./src/routes/riskRoutes");
-setupRiskRoutes(app);
-console.log("✅ Risk Agent routes initialized: /api/risk/*");
