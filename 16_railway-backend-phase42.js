@@ -211,8 +211,23 @@ app.get('/', (req, res) => {
 });
 
 // Phase 4.5: Risk Agent Integration
+const WebhookListener = require("./src/webhooks/WebhookListener");
+const { setupWebhookRoutes } = require("./src/routes/webhookRoutes");
+
+const webhookListener = new WebhookListener(null);
 const { setupRiskRoutes } = require("./src/routes/riskRoutes");
 setupRiskRoutes(app);
+
+
+// Initialize webhook listener with the HTTP server
+const server = require("http").createServer(app);
+webhookListener.httpServer = server;
+webhookListener.initialize();
+
+// Setup webhook routes
+const RiskAgent = require("./src/agents/RiskAgent");
+setupWebhookRoutes(app, webhookListener, RiskAgent);
+
 
 app.listen(port, () => {
   console.log(`✅ ATLAS Phase 4.2 Backend running on http://localhost:${port}`);
