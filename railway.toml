@@ -1,5 +1,6 @@
 [build]
 builder = "heroku"
+buildCommand = "cd atlas-backend && npm install"
 
 [deploy]
-startCommand = "node server.js"
+startCommand = "cd atlas-backend && node server.js"
