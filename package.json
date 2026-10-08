@@ -4,7 +4,7 @@
   "description": "ATLAS Phase 4.2: Self-Optimizing Thresholds with Temporal Pattern Recognition",
   "main": "16_railway-backend-phase42.js",
   "scripts": {
-    "start": "node 16_railway-backend-phase42.js",
+    "start": "cd atlas-backend && node server.js",
     "dev": "node 16_railway-backend-phase42.js"
   },
   "dependencies": {
