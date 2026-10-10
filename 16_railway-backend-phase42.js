@@ -230,7 +230,7 @@ setupWebhookRoutes(app, webhookListener, RiskAgent);
 
 
 app.listen(port, () => {
-  console.log(`✅ ATLAS Phase 4.2 Backend running on http://localhost:${port}`);
+  console.log(`✅ ATLAS Phase 4.5 & 4.6 Backend running on http://localhost:${port}`);
   console.log('');
   console.log('Endpoints:');
   console.log(`  Dashboard: GET http://localhost:${port}/`);
@@ -238,6 +238,8 @@ app.listen(port, () => {
   console.log(`  Thresholds: GET http://localhost:${port}/api/thresholds`);
   console.log(`  Patterns: GET http://localhost:${port}/api/patterns`);
   console.log(`  Orchestrate: POST http://localhost:${port}/api/orchestrate`);
+  console.log(`  Risk stats: GET http://localhost:${port}/api/risk/stats`);
+  console.log(`  Risk stream (WebSocket) ws://localhost:${port}/api/risk/stream`);
   console.log('');
   console.log('Press Ctrl+C to stop.');
   console.log('');
