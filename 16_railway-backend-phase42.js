@@ -229,7 +229,7 @@ const RiskAgent = require("./src/agents/RiskAgent");
 setupWebhookRoutes(app, webhookListener, RiskAgent);
 
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`✅ ATLAS Phase 4.5 & 4.6 Backend running on http://localhost:${port}`);
   console.log('');
   console.log('Endpoints:');
