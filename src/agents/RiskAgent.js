@@ -111,7 +111,8 @@ Respond ONLY as valid JSON:
     const weights = { velocity: 0.25, amountAnomaly: 0.25, newMerchant: 0.15, timeAnomaly: 0.1 };
     let baseScore = weights.velocity * signals.velocityScore + weights.amountAnomaly * signals.amountAnomalyScore + weights.newMerchant * signals.newMerchantScore + weights.timeAnomaly * signals.timeAnomalyScore;
     const aiBoost = aiAnalysis.anomalyRiskLevel === "high" ? 20 : aiAnalysis.anomalyRiskLevel === "medium" ? 10 : 0;
-    const riskScore = Math.min(100, baseScore + aiBoost * aiAnalysis.confidence);
+    const aiConfidence = Number.isFinite(Number(aiAnalysis.confidence)) ? Math.min(1, Math.max(0, Number(aiAnalysis.confidence))) : 0.5;
+    const riskScore = Math.min(100, baseScore + aiBoost * aiConfidence);
 
     let riskLevel = "low";
     if (riskScore >= 70) riskLevel = "high";
@@ -126,7 +127,7 @@ Respond ONLY as valid JSON:
       riskScore: Math.round(riskScore),
       riskLevel,
       recommendation,
-      factors: { velocity: signals.velocityScore.toFixed(0), amountAnomaly: signals.amountAnomalyScore.toFixed(0), newMerchant: signals.newMerchantScore, timeAnomaly: signals.timeAnomalyScore, aiAnalysis: aiAnalysis.factors },
+      factors: { velocity: signals.velocityScore.toFixed(0), amountAnomaly: signals.amountAnomalyScore.toFixed(0), newMerchant: signals.newMerchantScore, timeAnomaly: signals.timeAnomalyScore, aiAnalysis: Array.isArray(aiAnalysis.factors) ? aiAnalysis.factors : [] },
       reasoning: aiAnalysis.reasoning,
       timestamp: new Date().toISOString(),
     };
