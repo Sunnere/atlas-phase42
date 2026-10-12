@@ -95,14 +95,15 @@ Respond ONLY as valid JSON:
 
     try {
       const message = await this.client.messages.create({
-        model: "claude-3-5-sonnet-20241022",
+        model: process.env.ATLAS_RISK_MODEL || "claude-haiku-5-5",
         max_tokens: 256,
         messages: [{ role: "user", content: prompt }],
       });
       const responseText = message.content[0].type === "text" ? message.content[0].text : "{}";
       return JSON.parse(responseText);
     } catch (error) {
-      return { anomalyRiskLevel: "medium", confidence: 0.5, factors: ["api-error"], reasoning: "Claude API unavailable" };
+      console.error("RiskAgent AI-feil:", error && error.message ? error.message : error);
+      return { anomalyRiskLevel: "medium", confidence: 0.5, factors: ["api-error"], reasoning: "Claude API unavailable: " + (error && error.message ? error.message : "ukjent feil") };
     }
   }
 

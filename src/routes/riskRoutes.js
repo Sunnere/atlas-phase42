@@ -1,7 +1,8 @@
 const RiskAgent = require("../agents/RiskAgent");
 
 function setupRiskRoutes(app) {
-  const agent = new RiskAgent(process.env.ANTHROPIC_API_KEY);
+  const { getRiskAgent } = require("../agents/riskAgentInstance");
+  const agent = getRiskAgent();
 
   app.post("/api/risk/assess", async (req, res) => {
     try {

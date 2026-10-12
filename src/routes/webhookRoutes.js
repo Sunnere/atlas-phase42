@@ -3,6 +3,8 @@
  * External API for triggering risk assessments
  */
 
+const { getRiskAgent } = require("../agents/riskAgentInstance");
+
 function setupWebhookRoutes(app, webhookListener, riskAgentModule) {
   // Get RiskAgent class
   const RiskAgent = riskAgentModule;
@@ -68,7 +70,7 @@ function setupWebhookRoutes(app, webhookListener, riskAgentModule) {
   // Listen for assessment completion
   webhookListener.on("assessmentRequired", async (event) => {
     try {
-      const agent = new RiskAgent(process.env.ANTHROPIC_API_KEY);
+      const agent = getRiskAgent();
       const assessment = await agent.assessTransaction({
         id: event.transactionId,
         userId: event.userId,
