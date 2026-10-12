@@ -217,6 +217,8 @@ const { setupWebhookRoutes } = require("./src/routes/webhookRoutes");
 const webhookListener = new WebhookListener(null);
 const { setupRiskRoutes } = require("./src/routes/riskRoutes");
 setupRiskRoutes(app);
+const { setupCoordinatorRoutes } = require("./src/routes/coordinatorRoutes");
+setupCoordinatorRoutes(app);
 
 
 // Initialize webhook listener with the HTTP server

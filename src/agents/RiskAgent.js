@@ -17,8 +17,9 @@ class RiskAgent {
     };
   }
 
-  async assessTransaction(transaction) {
-    const { id, amount, merchant, category, timestamp = Date.now(), userId } = transaction;
+  async assessTransaction(rawTransaction) {
+    const transaction = { ...rawTransaction, timestamp: typeof rawTransaction.timestamp === "number" ? rawTransaction.timestamp : (Date.parse(rawTransaction.timestamp) || Date.now()) };
+    const { id, amount, merchant, category, timestamp, userId } = transaction;
     const context = this.gatherContext(userId, merchant, category);
     const signals = this.calculateSignals(transaction, context.recentTransactions);
     const aiAnalysis = await this.analyzeWithClaude(transaction, context, signals);
