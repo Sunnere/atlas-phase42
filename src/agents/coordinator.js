@@ -1,12 +1,22 @@
 const crypto = require("crypto");
 const { getRiskAgent } = require("./riskAgentInstance");
+const { assessRegnskap } = require("./handlers/regnskapAgent");
+const { analyseFund } = require("./handlers/fundMonitorAgent");
+const { assessGmail } = require("./handlers/gmailAgent");
+const { assessCalendar } = require("./handlers/calendarAgent");
 
 const tasks = new Map();
 
-// Hver agenttype får en handler. Nye agenter (regnskap, m.fl.) registreres her.
+// Hver agenttype får en handler. Nye agenter registreres her.
 const handlers = {
   risk: (payload) => getRiskAgent().assessTransaction(payload),
+  regnskap: (payload) => assessRegnskap(payload),
+  fund: (payload) => analyseFund(payload),
+  gmail: (payload) => assessGmail(payload),
+  calendar: (payload) => assessCalendar(payload),
 };
+
+const RATINGS = ["GRØNN", "ORANSJE", "RØD", "GRÅ (for kort historikk)"];
 
 // Checker: verifiserer at agentens svar faktisk er brukbart.
 function check(type, result) {
@@ -17,6 +27,16 @@ function check(type, result) {
     if (!Number.isFinite(result.riskScore) || result.riskScore < 0 || result.riskScore > 100) problems.push("riskScore mangler eller er ugyldig");
     if (!["low", "medium", "high"].includes(result.riskLevel)) problems.push("riskLevel ugyldig");
     if (typeof result.recommendation !== "string") problems.push("recommendation mangler");
+  } else if (type === "regnskap") {
+    if (!["income", "expense"].includes(result.type)) problems.push("type ugyldig");
+    if (typeof result.category !== "string" || !result.category) problems.push("kategori mangler");
+  } else if (type === "fund") {
+    if (!RATINGS.includes(result.rating)) problems.push("rating ugyldig");
+    if (!Number.isFinite(result.ann)) problems.push("annualisert avkastning ugyldig");
+  } else if (type === "gmail") {
+    if (!result.counts || !Number.isFinite(result.counts.total)) problems.push("counts mangler");
+  } else if (type === "calendar") {
+    if (!Array.isArray(result.upcoming)) problems.push("upcoming mangler");
   }
   return { ok: problems.length === 0, problems };
 }
