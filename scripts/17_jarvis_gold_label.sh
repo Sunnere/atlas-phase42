@@ -1,0 +1,224 @@
+#!/usr/bin/env bash
+# Skriver public/dashboard/jarvis.html (Jarvis-visning med Gull-agent). Selvstendig, krever ingen andre scripts.
+# Kjør fra roten av atlas-phase42:  bash scripts/17_jarvis_gold_label.sh
+set -euo pipefail
+
+if [ ! -d public ]; then
+  echo "FEIL: fant ikke public/. Stå i roten av atlas-phase42."
+  exit 1
+fi
+
+mkdir -p public/dashboard
+cat > public/dashboard/jarvis.html << 'JARVIS_HTML_17_EOF'
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATLAS · Koordinator</title>
+<style>
+:root{--bg:#03070e;--ink:#e6f4ff;--mute:#6f8aa6;--cyan:#38d6ff;--gold:#f5c451;--ok:#3ddc97;--warn:#ffb020;--err:#ff5d6c;--plan:#3a4d66}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+body{background:radial-gradient(ellipse at 50% 40%,#0b2236 0%,#050b15 45%,var(--bg) 75%)}
+#rain{position:fixed;inset:0;width:100%;height:100%;opacity:.45;pointer-events:none}
+header{position:relative;z-index:2;display:flex;justify-content:space-between;padding:16px 22px;font-size:12px;color:var(--mute);letter-spacing:.14em;text-transform:uppercase}
+#wrap{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;height:calc(100% - 52px)}
+#stage{position:relative;width:min(92vw,720px);aspect-ratio:1;margin-top:10px}
+.panel{position:absolute;inset:-18px;border:1px solid rgba(56,214,255,.28);border-radius:8px;background:linear-gradient(180deg,rgba(56,214,255,.05),rgba(56,214,255,0));box-shadow:0 0 50px rgba(56,214,255,.1) inset,0 0 30px rgba(56,214,255,.08);pointer-events:none}
+.panel::before,.panel::after{content:"";position:absolute;width:26px;height:26px;border:2px solid var(--cyan);opacity:.9}
+.panel::before{top:-2px;left:-2px;border-right:none;border-bottom:none;border-radius:8px 0 0 0}
+.panel::after{bottom:-2px;right:-2px;border-left:none;border-top:none;border-radius:0 0 8px 0}
+#links{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#links line{stroke:rgba(56,214,255,.3);stroke-width:.22}
+#links line.working{stroke:var(--cyan);stroke-width:.32;stroke-dasharray:1 1.6;animation:flow 1.1s linear infinite}
+#links line.planned{stroke:var(--plan);stroke-dasharray:.5 1.3}
+#links circle.pulse{fill:var(--cyan)}
+@keyframes flow{to{stroke-dashoffset:-2.6}}
+.hub{position:absolute;left:50%;top:50%;width:36%;aspect-ratio:1;transform:translate(-50%,-50%);display:grid;place-items:center}
+.hub .halo{position:absolute;inset:-18%;border-radius:50%;background:radial-gradient(circle,rgba(56,214,255,.35) 0%,rgba(56,214,255,.08) 40%,transparent 70%);animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+.hub .disc{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(56,214,255,.9);background:radial-gradient(circle at 50% 40%,#123a58 0%,#071a2b 70%);box-shadow:0 0 30px rgba(56,214,255,.7) inset,0 0 40px rgba(56,214,255,.55)}
+.hub .ring{position:absolute;border-radius:50%;border:1px dashed rgba(56,214,255,.5);animation:spin 18s linear infinite}
+.hub .ring.a{inset:-6%}
+.hub .ring.b{inset:8%;border-style:solid;border-color:rgba(56,214,255,.25);animation-direction:reverse;animation-duration:26s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hub .ping{position:absolute;inset:0;border-radius:50%;border:2px solid var(--cyan);opacity:0;animation:ping 2.8s ease-out infinite}
+.hub .ping:nth-of-type(2){animation-delay:.93s}
+.hub .ping:nth-of-type(3){animation-delay:1.86s}
+@keyframes ping{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+.b{position:relative;font-size:clamp(64px,11vw,120px);font-weight:800;line-height:1;background:linear-gradient(180deg,#fff7d6,var(--gold) 60%,#b8860b);-webkit-background-clip:text;background-clip:text;color:transparent;animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 10px rgba(245,196,81,.35))}50%{transform:scale(1.07);filter:drop-shadow(0 0 26px rgba(245,196,81,.9))}}
+.hub .title{position:absolute;bottom:-34px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;letter-spacing:.3em;color:var(--mute);text-transform:uppercase}
+.node{position:absolute;transform:translate(-50%,-50%);width:112px;text-align:center;background:rgba(3,7,14,.82);border-radius:12px;padding:0 4px 4px}
+.orb{width:68px;height:68px;margin:0 auto;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 35%,#10283d,#06121f 75%);border:2px solid var(--c,var(--mute));box-shadow:0 0 14px var(--c,var(--mute)),0 0 0 4px rgba(5,11,21,.9) inset;color:var(--c,var(--mute));font-size:12px;font-weight:800;letter-spacing:.05em}
+.node .label{margin-top:8px;font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap}
+.node .task{margin-top:3px;font-size:10px;line-height:1.3;color:var(--mute);min-height:26px;word-break:break-word}
+.node.working{--c:var(--cyan)}
+.node.working .orb{animation:orbPulse 1.4s ease-in-out infinite}
+.node.ok{--c:var(--ok)}
+.node.waiting{--c:var(--warn)}
+.node.error{--c:var(--err)}
+.node.planned{--c:var(--plan)}
+.node.planned .orb{border-style:dashed}
+.node.planned .label{color:var(--mute)}
+@keyframes orbPulse{0%,100%{box-shadow:0 0 12px var(--cyan)}50%{box-shadow:0 0 28px var(--cyan)}}
+.base{position:absolute;bottom:6%;left:50%;transform:translateX(-50%);width:min(96vw,980px);height:150px;pointer-events:none}
+.base span{position:absolute;left:50%;top:50%;border-radius:50%;border:1px solid rgba(56,214,255,.45);transform:translate(-50%,-50%) rotateX(72deg)}
+.base span:nth-child(1){width:100%;height:100%;box-shadow:0 0 40px rgba(56,214,255,.35)}
+.base span:nth-child(2){width:72%;height:72%;border-color:rgba(56,214,255,.7);animation:basePulse 2.8s ease-in-out infinite}
+.base span:nth-child(3){width:44%;height:44%;background:radial-gradient(circle,rgba(56,214,255,.5),transparent 70%);border:none}
+@keyframes basePulse{0%,100%{opacity:.5}50%{opacity:1}}
+footer{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:var(--mute);font-size:12px;z-index:2}
+@media (max-width:560px){.node{width:92px}.orb{width:56px;height:56px;font-size:11px}.node .label{font-size:11px}.node .task{font-size:9px}.hub .title{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<canvas id="rain"></canvas>
+<header><span>ATLAS · koordinator</span><span id="clock"></span></header>
+<div id="wrap">
+  <main id="stage">
+    <div class="panel"></div>
+    <svg id="links" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+    <div class="hub">
+      <span class="halo"></span>
+      <span class="ring a"></span><span class="ring b"></span>
+      <span class="disc"></span>
+      <span class="ping"></span><span class="ping"></span><span class="ping"></span>
+      <span class="b">B</span>
+      <span class="title">Koordinator</span>
+    </div>
+  </main>
+</div>
+<div class="base"><span></span><span></span><span></span></div>
+<footer id="foot">Laster agentstatus…</footer>
+<script>
+// Samme origin når siden serveres fra atlas; ellers peker vi på produksjon.
+const BASE = location.protocol.startsWith("http") ? "" : "https://atlas.bonusvarsel.no";
+const REFRESH_MS = 15000;
+const SLOTS = 8;
+const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent"};
+// Planlagte agenter fra veikartet; vises stiplet til de er registrert i koordinatoren.
+const PLANNED = ["Regnskap", "Fond-monitor", "Stripe", "Kalender", "ATLAS Møte", "Adtraction", "Morgenbrief"];
+const TASK_STATE = {queued: "working", running: "working", done: "ok", needs_review: "waiting", failed: "error"};
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+async function getJson(path){
+  const r = await fetch(BASE + path, {cache: "no-store"});
+  if(!r.ok) throw new Error(path + " " + r.status);
+  const j = await r.json();
+  if(!j.success) throw new Error(path + " ikke suksess");
+  return j.data;
+}
+
+function taskText(t){
+  if(t.status === "failed") return "Feil: " + (t.error || "ukjent");
+  if(t.status === "needs_review") return "Svar må kontrolleres";
+  if(t.status === "done") return "Sist: ferdig";
+  if(t.status === "running") return "Kjører …";
+  return "I kø";
+}
+
+function buildNodes(types, tasks){
+  const nodes = types.map(type => {
+    // Oppgavelisten er nyeste først, så første treff per type er siste oppgave.
+    const latest = tasks.find(t => t.type === type);
+    const name = DISPLAY[type] || type;
+    if(!latest) return {name, status: "", task: "Ingen oppgaver ennå", planned: false};
+    return {name, status: TASK_STATE[latest.status] || "", task: taskText(latest), planned: false};
+  });
+  for(const name of PLANNED){
+    if(nodes.length >= SLOTS) break;
+    if(!nodes.some(n => n.name === name)) nodes.push({name, status: "", task: "Planlagt", planned: true});
+  }
+  return nodes.slice(0, SLOTS);
+}
+
+function render(nodes){
+  const stage = document.getElementById("stage");
+  stage.querySelectorAll(".node").forEach(n => n.remove());
+  const svg = document.getElementById("links");
+  svg.innerHTML = "";
+  const N = nodes.length, R = 38;
+  nodes.forEach((a, i) => {
+    const ang = -Math.PI/2 + i*2*Math.PI/N;
+    const x = 50 + R*Math.cos(ang), y = 50 + R*Math.sin(ang);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", 50); line.setAttribute("y1", 50);
+    line.setAttribute("x2", x); line.setAttribute("y2", y);
+    if(a.planned) line.setAttribute("class", "planned");
+    else if(a.status === "working") line.setAttribute("class", "working");
+    svg.appendChild(line);
+    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    dot.setAttribute("cx", x); dot.setAttribute("cy", y); dot.setAttribute("r", 0.6);
+    dot.setAttribute("class", "pulse");
+    svg.appendChild(dot);
+    const el = document.createElement("div");
+    el.className = "node " + a.status + (a.planned ? " planned" : "");
+    el.style.left = x + "%"; el.style.top = y + "%";
+    const abbr = String(a.name).slice(0, 2).toUpperCase();
+    el.innerHTML = `<div class="orb">${esc(abbr)}</div><div class="label">${esc(a.name)}</div><div class="task">${esc(a.task || "—")}</div>`;
+    stage.appendChild(el);
+  });
+}
+
+async function load(){
+  let types, tasks = [], live = false, note = "";
+  try{
+    types = await getJson("/api/coordinator/agents");
+    live = true;
+  }catch(e){
+    types = ["risk"];
+    note = "Demo-data · kunne ikke hente fra koordinatoren";
+  }
+  if(live){
+    try{ tasks = await getJson("/api/coordinator/tasks"); }catch(e){ note = "Oppgaver kunne ikke hentes"; }
+  }
+  render(buildNodes(types, tasks));
+  document.getElementById("foot").textContent = live
+    ? (note || `Live fra koordinatoren · ${tasks.length} ${tasks.length === 1 ? "oppgave" : "oppgaver"} · oppdateres hvert 15. sekund`)
+    : note;
+}
+
+// Koderegn i bakgrunnen (lett: ~30 bilder per sekund, pauser når fanen er skjult).
+(function rain(){
+  const c = document.getElementById("rain");
+  const ctx = c.getContext("2d");
+  const chars = "01ATLASBONUSFOND{}<>/=+*#";
+  let cols = [], size = 16;
+  function resize(){
+    c.width = innerWidth; c.height = innerHeight;
+    cols = Array.from({length: Math.ceil(c.width/size)}, () => Math.random()*c.height/size);
+  }
+  function frame(){
+    ctx.fillStyle = "rgba(3,7,14,0.12)";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.font = size + "px ui-monospace,Menlo,monospace";
+    for(let i=0;i<cols.length;i++){
+      const ch = chars[Math.floor(Math.random()*chars.length)];
+      const y = cols[i]*size;
+      ctx.fillStyle = Math.random() > 0.97 ? "#e6f4ff" : "rgba(56,214,255,0.55)";
+      ctx.fillText(ch, i*size, y);
+      cols[i] = (y > c.height && Math.random() > 0.975) ? 0 : cols[i] + 0.6;
+    }
+  }
+  resize(); addEventListener("resize", resize);
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  setInterval(() => { if(!document.hidden) frame(); }, 33);
+})();
+
+function tick(){
+  document.getElementById("clock").textContent = new Date().toLocaleTimeString("no-NO");
+}
+tick(); setInterval(tick, 1000);
+load(); setInterval(load, REFRESH_MS);
+</script>
+</body>
+</html>
+JARVIS_HTML_17_EOF
+
+grep -q 'gold: "Gull-agent"' public/dashboard/jarvis.html
+echo "OK: public/dashboard/jarvis.html skrevet (med Gull-agent)."
+echo "Neste steg: git add public/dashboard/jarvis.html scripts/17_jarvis_gold_label.sh && git commit -m 'Jarvis: vis gull-agent' && git push origin master"
