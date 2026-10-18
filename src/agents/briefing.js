@@ -11,11 +11,15 @@ function buildBriefing(latest, now = new Date()) {
   const gmail = latest.gmail && latest.gmail.result ? latest.gmail.result : null;
   const calendar = latest.calendar && latest.calendar.result ? latest.calendar.result : null;
   const gold = latest.gold && latest.gold.result ? latest.gold.result : null;
+  const stripe = latest.stripe && latest.stripe.result ? latest.stripe.result : null;
 
   const todo = [];
   if (gmail) {
     for (const m of gmail.haster) todo.push({ typ: "haster", tekst: `${m.subject} (fra ${m.from})` });
     for (const m of gmail.partner) todo.push({ typ: "partner", tekst: `${m.subject} (fra ${m.from})` });
+  }
+  if (stripe) {
+    for (const f of stripe.flags) todo.push({ typ: "stripe", tekst: f.tekst });
   }
   if (calendar) {
     for (const c of calendar.conflicts) todo.push({ typ: "kalender", tekst: `Overlapp: ${c.a} / ${c.b}` });
@@ -31,10 +35,13 @@ function buildBriefing(latest, now = new Date()) {
     kalender: calendar
       ? { counts: calendar.counts, neste48t: calendar.upcoming, konflikter: calendar.conflicts, sistOppdatert: latest.calendar.finishedAt }
       : null,
+    stripe: stripe
+      ? { counts: stripe.counts, volume: stripe.volume, refunded: stripe.refunded, flags: stripe.flags, sistOppdatert: latest.stripe.finishedAt }
+      : null,
     makeAnnonser: null, // kobles inn når Zernio-post-ID-er lagres i datastore
   };
 
-  const mangler = ["gmail", "calendar", "gold"].filter((t) => !latest[t]);
+  const mangler = ["gmail", "calendar", "gold", "stripe"].filter((t) => !latest[t]);
 
   return {
     generatedAt: now.toISOString(),
@@ -72,6 +79,14 @@ function renderText(s, todo, mangler, now) {
   lines.push("🥇 Gull (XAU/USD)");
   if (!s.gull) lines.push("  Ingen data ennå.");
   else lines.push(`  ${s.gull.pris} USD (${s.gull.endringProsent >= 0 ? "+" : ""}${Number(s.gull.endringProsent).toFixed(2)} %) — sjekket ${fmtTime(s.gull.sjekket)}`);
+  lines.push("");
+
+  lines.push("💳 Stripe (siste døgn)");
+  if (!s.stripe) lines.push("  Ingen data ennå.");
+  else {
+    const vol = Object.entries(s.stripe.volume).map(([c, v]) => `${(v / 100).toFixed(2)} ${c}`).join(", ") || "0";
+    lines.push(`  ${s.stripe.counts.succeeded} vellykkede (${vol}), ${s.stripe.counts.failed} feilet, ${s.stripe.counts.refunds} refusjoner, ${s.stripe.counts.openDisputes} åpne disputer`);
+  }
   lines.push("");
 
   lines.push("📣 Make-annonser (visninger, likes, kommentarer)");

@@ -5,6 +5,7 @@ const { analyseFund } = require("./handlers/fundMonitorAgent");
 const { assessGmail } = require("./handlers/gmailAgent");
 const { assessCalendar } = require("./handlers/calendarAgent");
 const { analyseGold, checkGold } = require("./handlers/goldAgent");
+const { analyseStripe, checkStripe } = require("./handlers/stripeAgent");
 const store = require("./store");
 
 const tasks = new Map();
@@ -17,6 +18,7 @@ const handlers = {
   gmail: (payload) => assessGmail(payload),
   calendar: (payload) => assessCalendar(payload),
   gold: (payload) => analyseGold(payload),
+  stripe: (payload) => analyseStripe(payload),
 };
 
 const RATINGS = ["GRØNN", "ORANSJE", "RØD", "GRÅ (for kort historikk)"];
@@ -40,6 +42,8 @@ function check(type, result) {
     if (!result.counts || !Number.isFinite(result.counts.total)) problems.push("counts mangler");
   } else if (type === "calendar") {
     if (!Array.isArray(result.upcoming)) problems.push("upcoming mangler");
+  } else if (type === "stripe") {
+    problems.push(...checkStripe(result));
   } else if (type === "gold") {
     problems.push(...checkGold(result));
   }
