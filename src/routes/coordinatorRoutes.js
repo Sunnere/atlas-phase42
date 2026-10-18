@@ -10,6 +10,12 @@ function setupCoordinatorRoutes(app) {
     res.json({ success: true, data: coordinator.latest() });
   });
 
+  // "Oppdater meg": samlet morgenoppdatering (gjøremål, e-post, kalender, gull, Make-plassholder).
+  app.get("/api/coordinator/briefing", (req, res) => {
+    const { buildBriefing } = require("../agents/briefing");
+    res.json({ success: true, data: buildBriefing(coordinator.latest()) });
+  });
+
   app.get("/api/coordinator/tasks", (req, res) => {
     res.json({ success: true, data: coordinator.list() });
   });
