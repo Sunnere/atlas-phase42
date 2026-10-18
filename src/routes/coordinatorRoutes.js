@@ -5,6 +5,11 @@ function setupCoordinatorRoutes(app) {
     res.json({ success: true, data: coordinator.agentTypes() });
   });
 
+  // Siste ferdige resultat per agent, også etter restart. Brukes til "oppdater meg"-oversikten.
+  app.get("/api/coordinator/summary", (req, res) => {
+    res.json({ success: true, data: coordinator.latest() });
+  });
+
   app.get("/api/coordinator/tasks", (req, res) => {
     res.json({ success: true, data: coordinator.list() });
   });

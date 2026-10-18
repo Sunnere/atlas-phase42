@@ -5,6 +5,7 @@ const { analyseFund } = require("./handlers/fundMonitorAgent");
 const { assessGmail } = require("./handlers/gmailAgent");
 const { assessCalendar } = require("./handlers/calendarAgent");
 const { analyseGold, checkGold } = require("./handlers/goldAgent");
+const store = require("./store");
 
 const tasks = new Map();
 
@@ -62,6 +63,7 @@ async function run(task) {
     task.error = err.message;
   }
   task.finishedAt = new Date().toISOString();
+  if (task.status === "done" || task.status === "needs_review") store.record(task);
 }
 
 function submit(type, payload) {
@@ -88,4 +90,4 @@ function get(id) {
   return tasks.get(id) || null;
 }
 
-module.exports = { submit, list, get, check, agentTypes: () => Object.keys(handlers) };
+module.exports = { submit, list, get, check, latest: () => store.getLatest(), agentTypes: () => Object.keys(handlers) };

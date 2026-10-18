@@ -219,6 +219,10 @@ const { setupRiskRoutes } = require("./src/routes/riskRoutes");
 setupRiskRoutes(app);
 const { setupCoordinatorRoutes } = require("./src/routes/coordinatorRoutes");
 setupCoordinatorRoutes(app);
+// Timer for koordinatoren (gull hvert 15. min). Slå av med COORDINATOR_SCHEDULER=off.
+if (process.env.COORDINATOR_SCHEDULER !== "off") {
+  require("./src/agents/scheduler").startScheduler(require("./src/agents/coordinator").submit);
+}
 
 
 // Initialize webhook listener with the HTTP server
