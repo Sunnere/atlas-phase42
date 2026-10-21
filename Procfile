@@ -1,1 +1,1 @@
-web: node 16_railway-backend-phase42.js
+web: cd atlas-backend && node server.js

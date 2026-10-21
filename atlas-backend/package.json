@@ -1,0 +1,25 @@
+{
+  "name": "atlas-backend",
+  "version": "1.0.0",
+  "description": "ATLAS Phase 4.3 - Agent Orchestration Backend",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.26.1",
+    "cors": "^2.8.6",
+    "express": "^4.18.2"
+  },
+  "keywords": [
+    "atlas",
+    "orchestration",
+    "risk-analysis"
+  ],
+  "author": "ATLAS Team",
+  "license": "MIT"
+}
