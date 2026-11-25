@@ -103,7 +103,7 @@ const REFRESH_MS = 15000;
 const SLOTS = 12;
 const MIN_SLOTS = 8;
 let LAST_TASKS = [];
-const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent", stripe: "Stripe", rapport: "ATLAS Rapport", fronter: "Fronter"};
+const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent", stripe: "Stripe", rapport: "ATLAS Rapport", fronter: "Fronter", sosial: "Sosiale medier"};
 // Planlagte agenter fra veikartet; vises stiplet til de er registrert i koordinatoren.
 const PLANNED = ["Regnskap", "Fond-monitor", "Stripe", "Kalender", "Adtraction", "Morgenbrief"];
 const TASK_STATE = {queued: "working", running: "working", done: "ok", needs_review: "waiting", failed: "error"};
@@ -122,6 +122,10 @@ async function getJson(path){
 function taskText(t){
   if(t.type === "rapport" && t.result && Array.isArray(t.result.instances) && t.status !== "failed"){
     return t.result.instances.map(i => i.name + " " + (i.ok ? i.total : "?")).join(" · ");
+  }
+  if(t.type === "sosial" && t.result && t.result.totals && t.status !== "failed"){
+    const x = t.result.totals;
+    return x.views + " visninger · " + x.posts + " poster";
   }
   if(t.type === "fronter" && t.result && t.result.counts && t.status !== "failed"){
     const c = t.result.counts;
@@ -173,6 +177,7 @@ function render(nodes){
     el.style.left = x + "%"; el.style.top = y + "%";
     const abbr = String(a.name).slice(0, 2).toUpperCase();
     el.innerHTML = `<div class="orb">${esc(abbr)}</div><div class="label">${esc(a.name)}</div><div class="task">${esc(a.task || "—")}</div>`;
+    if(a.type === "sosial"){ el.style.cursor = "pointer"; el.title = "Vis sosiale medier"; el.addEventListener("click", openSosial); }
     if(a.type === "fronter"){ el.style.cursor = "pointer"; el.title = "Vis fronter"; el.addEventListener("click", openFronter); }
     if(a.type === "rapport"){ el.style.cursor = "pointer"; el.title = "Vis saker"; el.addEventListener("click", openRapport); }
     stage.appendChild(el);
@@ -246,6 +251,20 @@ function openFronter(){
   const rows = t.result.items.slice().sort((a,b) => String(a.front).localeCompare(String(b.front))).map(i =>
     `<tr><td>${esc(i.front)}</td><td>${esc(i.kind === "railway" ? "Railway" : "Make")}</td><td>${esc(i.name)}</td><td class="st-${esc(i.status)}">${LBL[i.status]}</td><td>${esc(i.detail || i.next || "")}</td></tr>`).join("");
   body.innerHTML = `<p>Oppdatert ${esc(new Date(t.finishedAt || t.createdAt).toLocaleString("no-NO",{dateStyle:"short",timeStyle:"short"}))}</p><table><tr><th>Front</th><th>Type</th><th>Navn</th><th>Status</th><th>Merknad</th></tr>${rows}</table>`;
+}
+
+// Sosiale medier: ukentlige tall fra Buffer og kort anbefaling.
+function openSosial(){
+  const box = document.getElementById("rp"), body = document.getElementById("rpbody");
+  document.querySelector("#rp h2").textContent = "Sosiale medier";
+  box.hidden = false;
+  const t = LAST_TASKS.find(x => x.type === "sosial" && x.result && x.result.channels);
+  if(!t){ body.textContent = "Ingen data ennå. Jobben kjører hver mandag morgen."; return; }
+  const r = t.result;
+  const rows = r.channels.map(c => `<tr><td>${esc(c.name)}</td><td>${c.posts}</td><td>${c.views}</td><td>${c.reach}</td><td>${c.reactions}</td><td>${c.comments}</td><td>${c.clicks}</td></tr>`).join("");
+  const flags = r.flags.map(f => `<p class="st-warn">⚠ ${esc(f.tekst)}</p>`).join("");
+  const per = r.period ? `${esc(r.period.from)} til ${esc(r.period.to)}` : "";
+  body.innerHTML = `<p>${per}</p><table><tr><th>Kanal</th><th>Poster</th><th>Visninger</th><th>Nådd</th><th>Likes</th><th>Komm.</th><th>Klikk</th></tr>${rows}</table>${flags}` + (r.recommendation ? `<h3>Anbefaling</h3><p>${esc(r.recommendation)}</p>` : "");
 }
 
 // Oppdater: kjør gull + rapport på nytt, last siden, vis morgenoppdateringen.

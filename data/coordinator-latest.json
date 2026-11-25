@@ -1,8 +1,8 @@
 {
   "fronter": {
-    "taskId": "ee1d63c1-37a6-4823-8d50-bafc6432d481",
+    "taskId": "bc997c40-e127-40bb-8440-bede36d96645",
     "status": "done",
-    "finishedAt": "2026-11-25T21:16:05.946Z",
+    "finishedAt": "2026-11-25T22:44:36.776Z",
     "check": {
       "ok": true,
       "problems": []
@@ -36,6 +36,44 @@
       ],
       "attention": [],
       "source": "Make + Railway"
+    }
+  },
+  "sosial": {
+    "taskId": "12971b29-5949-4760-8f80-c881a75ceca6",
+    "status": "done",
+    "finishedAt": "2026-11-25T22:44:36.282Z",
+    "check": {
+      "ok": true,
+      "problems": []
+    },
+    "result": {
+      "period": null,
+      "channels": [
+        {
+          "name": "A",
+          "service": "",
+          "posts": 1,
+          "views": 2,
+          "reach": 0,
+          "reactions": 0,
+          "comments": 0,
+          "clicks": 0,
+          "shares": 0,
+          "viewsPerPost": 2
+        }
+      ],
+      "totals": {
+        "posts": 1,
+        "views": 2,
+        "reach": 0,
+        "reactions": 0,
+        "comments": 0,
+        "clicks": 0,
+        "shares": 0
+      },
+      "flags": [],
+      "recommendation": "",
+      "source": "Buffer"
     }
   }
 }

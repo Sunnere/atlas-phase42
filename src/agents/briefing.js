@@ -14,6 +14,7 @@ function buildBriefing(latest, now = new Date()) {
   const stripe = latest.stripe && latest.stripe.result ? latest.stripe.result : null;
   const fronter = latest.fronter && latest.fronter.result ? latest.fronter.result : null;
   const rapport = latest.rapport && latest.rapport.result ? latest.rapport.result : null;
+  const sosial = latest.sosial && latest.sosial.result ? latest.sosial.result : null;
 
   const todo = [];
   if (gmail) {
@@ -45,10 +46,11 @@ function buildBriefing(latest, now = new Date()) {
       : null,
     fronter: fronter ? { counts: fronter.counts, byFront: fronter.byFront, attention: fronter.attention, sistOppdatert: latest.fronter.finishedAt } : null,
     rapport: rapport ? { total: rapport.total, instances: rapport.instances, sistOppdatert: latest.rapport.finishedAt } : null,
+    sosial: sosial ? { period: sosial.period, totals: sosial.totals, channels: sosial.channels, flags: sosial.flags, recommendation: sosial.recommendation, sistOppdatert: latest.sosial.finishedAt } : null,
     makeAnnonser: null, // kobles inn når Zernio-post-ID-er lagres i datastore
   };
 
-  const mangler = ["gmail", "calendar", "gold", "stripe", "fronter", "rapport"].filter((t) => !latest[t]);
+  const mangler = ["gmail", "calendar", "gold", "stripe", "fronter", "rapport", "sosial"].filter((t) => !latest[t]);
 
   return {
     generatedAt: now.toISOString(),
@@ -108,6 +110,17 @@ function renderText(s, todo, mangler, now) {
   lines.push("📝 ATLAS Rapport");
   if (!s.rapport) lines.push("  Ingen data ennå.");
   else lines.push("  " + s.rapport.instances.map((i) => `${i.name}: ${i.ok ? i.total + " saker" : "ikke nådd"}`).join(" · "));
+  lines.push("");
+
+  lines.push("📱 Sosiale medier (siste uke)");
+  if (!s.sosial) lines.push("  Ingen data ennå (kommer hver mandag).");
+  else {
+    const t = s.sosial.totals;
+    lines.push(`  ${t.posts} poster, ${t.views} visninger, ${t.reactions} likes, ${t.comments} kommentarer, ${t.clicks} klikk`);
+    for (const c of s.sosial.channels) lines.push(`  • ${c.name}: ${c.posts} poster, ${c.views} visninger`);
+    for (const f of s.sosial.flags) lines.push(`  ⚠️ ${f.tekst}`);
+    if (s.sosial.recommendation) lines.push("  💡 " + s.sosial.recommendation);
+  }
   lines.push("");
 
   lines.push("📣 Make-annonser (visninger, likes, kommentarer)");

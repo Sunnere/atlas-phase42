@@ -8,6 +8,7 @@ const { analyseGold, checkGold } = require("./handlers/goldAgent");
 const { analyseStripe, checkStripe } = require("./handlers/stripeAgent");
 const { assessRapport, checkRapport } = require("./handlers/rapportAgent");
 const { assessFronter, checkFronter } = require("./handlers/fronterAgent");
+const { assessSosial, checkSosial } = require("./handlers/sosialAgent");
 const store = require("./store");
 
 const tasks = new Map();
@@ -23,6 +24,7 @@ const handlers = {
   stripe: (payload) => analyseStripe(payload),
   rapport: (payload) => assessRapport(payload),
   fronter: (payload) => assessFronter(payload),
+  sosial: (payload) => assessSosial(payload),
 };
 
 const RATINGS = ["GRØNN", "ORANSJE", "RØD", "GRÅ (for kort historikk)"];
@@ -50,6 +52,8 @@ function check(type, result) {
     problems.push(...checkStripe(result));
   } else if (type === "rapport") {
     problems.push(...checkRapport(result));
+  } else if (type === "sosial") {
+    problems.push(...checkSosial(result));
   } else if (type === "fronter") {
     problems.push(...checkFronter(result));
   } else if (type === "gold") {
