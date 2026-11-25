@@ -26,6 +26,24 @@ function setupCoordinatorRoutes(app) {
     res.json({ success: true, data: task });
   });
 
+  // Saksliste fra ATLAS Rapport. Siden er offentlig, så denne krever nøkkel i headeren x-atlas-key.
+  app.get("/api/rapport/saker", async (req, res) => {
+    const want = process.env.ATLAS_DASH_KEY;
+    if (!want) return res.status(503).json({ success: false, error: "ATLAS_DASH_KEY er ikke satt på serveren" });
+    const crypto = require("crypto");
+    const got = Buffer.from(String(req.get("x-atlas-key") || ""));
+    const exp = Buffer.from(want);
+    if (got.length !== exp.length || !crypto.timingSafeEqual(got, exp)) {
+      return res.status(401).json({ success: false, error: "Feil nøkkel" });
+    }
+    try {
+      res.set("Cache-Control", "no-store");
+      res.json({ success: true, data: await require("../agents/handlers/rapportAgent").getCases() });
+    } catch (err) {
+      res.status(502).json({ success: false, error: err.message });
+    }
+  });
+
   app.post("/api/coordinator/tasks", (req, res) => {
     const { type, payload } = req.body || {};
     if (!type || !payload || typeof payload !== "object") {

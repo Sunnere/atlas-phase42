@@ -60,6 +60,16 @@ header{position:relative;z-index:2;display:flex;justify-content:space-between;pa
 footer{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:var(--mute);font-size:12px;z-index:2}
 @media (max-width:560px){.node{width:92px}.orb{width:56px;height:56px;font-size:11px}.node .label{font-size:11px}.node .task{font-size:9px}.hub .title{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+#rp{position:fixed;inset:0;background:rgba(3,7,14,.82);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}
+#rp[hidden]{display:none}
+.rpbox{position:relative;max-width:720px;width:100%;max-height:85vh;overflow:auto;background:#0a1220;border:1px solid rgba(56,214,255,.35);border-radius:14px;padding:18px;color:#e6f4ff}
+.rpbox h2{margin:0 0 10px;font-size:18px}
+#rpx{position:absolute;right:10px;top:8px;background:none;border:0;color:#9fb3c8;font-size:26px;cursor:pointer}
+.rpbox table{width:100%;border-collapse:collapse;font-size:13px}
+.rpbox td,.rpbox th{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:top}
+.rpbox input{padding:10px;border-radius:8px;border:1px solid #345;background:#06101c;color:#e6f4ff;width:100%;box-sizing:border-box;margin:8px 0}
+.rpbox button.go{padding:10px 16px;border-radius:8px;border:0;background:#38d6ff;color:#03070e;font-weight:600;cursor:pointer}
+.rpbad{color:#ff8a8a}
 </style>
 </head>
 <body>
@@ -80,15 +90,16 @@ footer{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:var(
   </main>
 </div>
 <div class="base"><span></span><span></span><span></span></div>
+<div id="rp" hidden><div class="rpbox"><button id="rpx" aria-label="Lukk">×</button><h2>ATLAS Rapport</h2><div id="rpbody"></div></div></div>
 <footer id="foot">Laster agentstatus…</footer>
 <script>
 // Samme origin når siden serveres fra atlas; ellers peker vi på produksjon.
 const BASE = location.protocol.startsWith("http") ? "" : "https://atlas.bonusvarsel.no";
 const REFRESH_MS = 15000;
 const SLOTS = 8;
-const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent"};
+const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent", stripe: "Stripe", rapport: "ATLAS Rapport"};
 // Planlagte agenter fra veikartet; vises stiplet til de er registrert i koordinatoren.
-const PLANNED = ["Regnskap", "Fond-monitor", "Stripe", "Kalender", "ATLAS Møte", "Adtraction", "Morgenbrief"];
+const PLANNED = ["Regnskap", "Fond-monitor", "Stripe", "Kalender", "Adtraction", "Morgenbrief"];
 const TASK_STATE = {queued: "working", running: "working", done: "ok", needs_review: "waiting", failed: "error"};
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -102,6 +113,9 @@ async function getJson(path){
 }
 
 function taskText(t){
+  if(t.type === "rapport" && t.result && Array.isArray(t.result.instances) && t.status !== "failed"){
+    return t.result.instances.map(i => i.name + " " + (i.ok ? i.total : "?")).join(" · ");
+  }
   if(t.status === "failed") return "Feil: " + (t.error || "ukjent");
   if(t.status === "needs_review") return "Svar må kontrolleres";
   if(t.status === "done") return "Sist: ferdig";
@@ -114,8 +128,8 @@ function buildNodes(types, tasks){
     // Oppgavelisten er nyeste først, så første treff per type er siste oppgave.
     const latest = tasks.find(t => t.type === type);
     const name = DISPLAY[type] || type;
-    if(!latest) return {name, status: "", task: "Ingen oppgaver ennå", planned: false};
-    return {name, status: TASK_STATE[latest.status] || "", task: taskText(latest), planned: false};
+    if(!latest) return {type, name, status: "", task: "Ingen oppgaver ennå", planned: false};
+    return {type, name, status: TASK_STATE[latest.status] || "", task: taskText(latest), planned: false};
   });
   for(const name of PLANNED){
     if(nodes.length >= SLOTS) break;
@@ -148,6 +162,7 @@ function render(nodes){
     el.style.left = x + "%"; el.style.top = y + "%";
     const abbr = String(a.name).slice(0, 2).toUpperCase();
     el.innerHTML = `<div class="orb">${esc(abbr)}</div><div class="label">${esc(a.name)}</div><div class="task">${esc(a.task || "—")}</div>`;
+    if(a.type === "rapport"){ el.style.cursor = "pointer"; el.title = "Vis saker"; el.addEventListener("click", openRapport); }
     stage.appendChild(el);
   });
 }
@@ -169,6 +184,36 @@ async function load(){
     ? (note || `Live fra koordinatoren · ${tasks.length} ${tasks.length === 1 ? "oppgave" : "oppgaver"} · oppdateres hvert 15. sekund`)
     : note;
 }
+
+// ATLAS Rapport: saksliste bak nøkkel (siden er offentlig, så titler vises bare med riktig kode).
+const KEYNAME = "atlas_dash_key";
+function lsGet(){ try{ return localStorage.getItem(KEYNAME) || ""; }catch(e){ return ""; } }
+function lsSet(v){ try{ localStorage.setItem(KEYNAME, v); }catch(e){} }
+const KIND = {defect: "Feilmelding", inspection: "Inspeksjon", documents: "Dokumentsjekk", meeting: "Møte"};
+function keyForm(msg){
+  return (msg ? `<p class="rpbad">${esc(msg)}</p>` : "") + `<p>Skriv inn koden for ATLAS Matrix for å se sakene.</p><input id="rpkey" type="password" autocomplete="off" placeholder="Kode"><button class="go" id="rpgo">Vis saker</button>`;
+}
+async function openRapport(){
+  const box = document.getElementById("rp"), body = document.getElementById("rpbody");
+  box.hidden = false;
+  const key = lsGet();
+  const bindForm = () => { const go = document.getElementById("rpgo"); if(go) go.onclick = () => { lsSet(document.getElementById("rpkey").value.trim()); openRapport(); }; };
+  if(!key){ body.innerHTML = keyForm(""); bindForm(); return; }
+  body.textContent = "Henter …";
+  try{
+    const r = await fetch(BASE + "/api/rapport/saker", {headers: {"x-atlas-key": key}, cache: "no-store"});
+    if(r.status === 401){ lsSet(""); body.innerHTML = keyForm("Feil kode"); bindForm(); return; }
+    if(r.status === 503){ body.textContent = "Ikke satt opp: ATLAS_DASH_KEY mangler på serveren."; return; }
+    const j = await r.json();
+    if(!j.success){ body.innerHTML = `<p class="rpbad">${esc(j.error || "Feil")}</p>`; return; }
+    const d = j.data;
+    const head = d.instances.map(i => `${esc(i.name)}: ${i.ok ? i.total + " saker" : `<span class="rpbad">${esc(i.error)}</span>`}`).join(" · ");
+    const rows = d.cases.slice(0, 100).map(c => `<tr><td>${esc(new Date(c.createdAt).toLocaleString("no-NO",{dateStyle:"short",timeStyle:"short"}))}</td><td>${esc(c.instance)}</td><td>${esc(KIND[c.kind] || c.kind)}</td><td>${esc(c.title || "")}</td><td>${esc(c.status || "")}</td></tr>`).join("");
+    body.innerHTML = `<p>${head}</p>` + (rows ? `<table><tr><th>Tid</th><th>Kunde</th><th>Type</th><th>Tittel</th><th>Status</th></tr>${rows}</table>` : "<p>Ingen saker ennå.</p>");
+  }catch(e){ body.textContent = "Kunne ikke hente sakene."; }
+}
+document.getElementById("rpx").onclick = () => { document.getElementById("rp").hidden = true; };
+document.getElementById("rp").addEventListener("click", e => { if(e.target.id === "rp") e.target.hidden = true; });
 
 // Koderegn i bakgrunnen (lett: ~30 bilder per sekund, pauser når fanen er skjult).
 (function rain(){
