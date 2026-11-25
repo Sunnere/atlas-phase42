@@ -1,8 +1,8 @@
 {
   "fronter": {
-    "taskId": "bc997c40-e127-40bb-8440-bede36d96645",
+    "taskId": "0f64c9c0-f56b-4175-95eb-1b4a31352e57",
     "status": "done",
-    "finishedAt": "2026-11-25T22:44:36.776Z",
+    "finishedAt": "2026-11-25T22:45:12.690Z",
     "check": {
       "ok": true,
       "problems": []
@@ -39,9 +39,9 @@
     }
   },
   "sosial": {
-    "taskId": "12971b29-5949-4760-8f80-c881a75ceca6",
+    "taskId": "6d681cb3-a489-4077-8067-f7c2f679952c",
     "status": "done",
-    "finishedAt": "2026-11-25T22:44:36.282Z",
+    "finishedAt": "2026-11-25T22:45:12.222Z",
     "check": {
       "ok": true,
       "problems": []
