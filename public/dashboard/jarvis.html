@@ -105,7 +105,8 @@ const TASK_STATE = {queued: "working", running: "working", done: "ok", needs_rev
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 async function getJson(path){
-  const r = await fetch(BASE + path, {cache: "no-store"});
+  const k = lsGet();
+  const r = await fetch(BASE + path, {cache: "no-store", headers: k ? {"x-atlas-key": k} : {}});
   if(!r.ok) throw new Error(path + " " + r.status);
   const j = await r.json();
   if(!j.success) throw new Error(path + " ikke suksess");
@@ -168,7 +169,7 @@ function render(nodes){
 }
 
 async function load(){
-  let types, tasks = [], live = false, note = "";
+  let types, tasks = [], live = false, note = "", locked = false;
   try{
     types = await getJson("/api/coordinator/agents");
     live = true;
@@ -177,13 +178,20 @@ async function load(){
     note = "Demo-data · kunne ikke hente fra koordinatoren";
   }
   if(live){
-    try{ tasks = await getJson("/api/coordinator/tasks"); }catch(e){ note = "Oppgaver kunne ikke hentes"; }
+    try{ tasks = await getJson("/api/coordinator/tasks"); }
+    catch(e){ note = / 401$/.test(e.message) ? "Låst · trykk her og skriv inn koden" : "Oppgaver kunne ikke hentes"; locked = / 401$/.test(e.message); }
   }
   render(buildNodes(types, tasks));
   document.getElementById("foot").textContent = live
     ? (note || `Live fra koordinatoren · ${tasks.length} ${tasks.length === 1 ? "oppgave" : "oppgaver"} · oppdateres hvert 15. sekund`)
     : note;
 }
+
+function askKey(){
+  const v = prompt("Kode for ATLAS Matrix:");
+  if(v){ lsSet(v.trim()); load(); }
+}
+document.getElementById("foot").addEventListener("click", () => { if(/Låst/.test(document.getElementById("foot").textContent)) askKey(); });
 
 // ATLAS Rapport: saksliste bak nøkkel (siden er offentlig, så titler vises bare med riktig kode).
 const KEYNAME = "atlas_dash_key";
