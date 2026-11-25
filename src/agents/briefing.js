@@ -12,6 +12,8 @@ function buildBriefing(latest, now = new Date()) {
   const calendar = latest.calendar && latest.calendar.result ? latest.calendar.result : null;
   const gold = latest.gold && latest.gold.result ? latest.gold.result : null;
   const stripe = latest.stripe && latest.stripe.result ? latest.stripe.result : null;
+  const fronter = latest.fronter && latest.fronter.result ? latest.fronter.result : null;
+  const rapport = latest.rapport && latest.rapport.result ? latest.rapport.result : null;
 
   const todo = [];
   if (gmail) {
@@ -20,6 +22,9 @@ function buildBriefing(latest, now = new Date()) {
   }
   if (stripe) {
     for (const f of stripe.flags) todo.push({ typ: "stripe", tekst: f.tekst });
+  }
+  if (fronter) {
+    for (const a of fronter.attention) todo.push({ typ: a.status === "error" ? "feil" : "obs", tekst: `${a.front}: ${a.name}${a.detail ? " – " + a.detail : ""}` });
   }
   if (calendar) {
     for (const c of calendar.conflicts) todo.push({ typ: "kalender", tekst: `Overlapp: ${c.a} / ${c.b}` });
@@ -38,10 +43,12 @@ function buildBriefing(latest, now = new Date()) {
     stripe: stripe
       ? { counts: stripe.counts, volume: stripe.volume, refunded: stripe.refunded, flags: stripe.flags, sistOppdatert: latest.stripe.finishedAt }
       : null,
+    fronter: fronter ? { counts: fronter.counts, byFront: fronter.byFront, attention: fronter.attention, sistOppdatert: latest.fronter.finishedAt } : null,
+    rapport: rapport ? { total: rapport.total, instances: rapport.instances, sistOppdatert: latest.rapport.finishedAt } : null,
     makeAnnonser: null, // kobles inn når Zernio-post-ID-er lagres i datastore
   };
 
-  const mangler = ["gmail", "calendar", "gold", "stripe"].filter((t) => !latest[t]);
+  const mangler = ["gmail", "calendar", "gold", "stripe", "fronter", "rapport"].filter((t) => !latest[t]);
 
   return {
     generatedAt: now.toISOString(),
@@ -87,6 +94,20 @@ function renderText(s, todo, mangler, now) {
     const vol = Object.entries(s.stripe.volume).map(([c, v]) => `${(v / 100).toFixed(2)} ${c}`).join(", ") || "0";
     lines.push(`  ${s.stripe.counts.succeeded} vellykkede (${vol}), ${s.stripe.counts.failed} feilet, ${s.stripe.counts.refunds} refusjoner, ${s.stripe.counts.openDisputes} åpne disputer`);
   }
+  lines.push("");
+
+  lines.push("🧭 Fronter (Make + Railway)");
+  if (!s.fronter) lines.push("  Ingen data ennå.");
+  else {
+    const c = s.fronter.counts;
+    lines.push(`  ${c.ok} i orden, ${c.warn} obs, ${c.error} feil, ${c.paused} pauset av ${c.total}`);
+    for (const [f, v] of Object.entries(s.fronter.byFront)) lines.push(`  • ${f}: ${v.ok}/${v.total} i orden${v.error ? `, ${v.error} feil` : ""}`);
+  }
+  lines.push("");
+
+  lines.push("📝 ATLAS Rapport");
+  if (!s.rapport) lines.push("  Ingen data ennå.");
+  else lines.push("  " + s.rapport.instances.map((i) => `${i.name}: ${i.ok ? i.total + " saker" : "ikke nådd"}`).join(" · "));
   lines.push("");
 
   lines.push("📣 Make-annonser (visninger, likes, kommentarer)");

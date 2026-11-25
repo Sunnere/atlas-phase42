@@ -62,6 +62,10 @@ footer{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:var(
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 #rp{position:fixed;inset:0;background:rgba(3,7,14,.82);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}
 #rp[hidden]{display:none}
+#upd{background:rgba(56,214,255,.12);color:#9be7ff;border:1px solid rgba(56,214,255,.45);border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;margin-right:14px}
+#upd:disabled{opacity:.5;cursor:wait}
+.rpbox pre{white-space:pre-wrap;font:13px/1.5 ui-monospace,Menlo,monospace;margin:0}
+.st-ok{color:#7ee2a8}.st-warn{color:#ffd166}.st-error{color:#ff8a8a}.st-paused{color:#9fb3c8}
 .rpbox{position:relative;max-width:720px;width:100%;max-height:85vh;overflow:auto;background:#0a1220;border:1px solid rgba(56,214,255,.35);border-radius:14px;padding:18px;color:#e6f4ff}
 .rpbox h2{margin:0 0 10px;font-size:18px}
 #rpx{position:absolute;right:10px;top:8px;background:none;border:0;color:#9fb3c8;font-size:26px;cursor:pointer}
@@ -74,7 +78,7 @@ footer{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:var(
 </head>
 <body>
 <canvas id="rain"></canvas>
-<header><span>ATLAS · koordinator</span><span id="clock"></span></header>
+<header><span>ATLAS · koordinator</span><span><button id="upd" type="button">Oppdater</button> <span id="clock"></span></span></header>
 <div id="wrap">
   <main id="stage">
     <div class="panel"></div>
@@ -96,8 +100,10 @@ footer{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:var(
 // Samme origin når siden serveres fra atlas; ellers peker vi på produksjon.
 const BASE = location.protocol.startsWith("http") ? "" : "https://atlas.bonusvarsel.no";
 const REFRESH_MS = 15000;
-const SLOTS = 8;
-const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent", stripe: "Stripe", rapport: "ATLAS Rapport"};
+const SLOTS = 12;
+const MIN_SLOTS = 8;
+let LAST_TASKS = [];
+const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent", stripe: "Stripe", rapport: "ATLAS Rapport", fronter: "Fronter"};
 // Planlagte agenter fra veikartet; vises stiplet til de er registrert i koordinatoren.
 const PLANNED = ["Regnskap", "Fond-monitor", "Stripe", "Kalender", "Adtraction", "Morgenbrief"];
 const TASK_STATE = {queued: "working", running: "working", done: "ok", needs_review: "waiting", failed: "error"};
@@ -117,6 +123,10 @@ function taskText(t){
   if(t.type === "rapport" && t.result && Array.isArray(t.result.instances) && t.status !== "failed"){
     return t.result.instances.map(i => i.name + " " + (i.ok ? i.total : "?")).join(" · ");
   }
+  if(t.type === "fronter" && t.result && t.result.counts && t.status !== "failed"){
+    const c = t.result.counts;
+    return c.ok + " i orden" + (c.error ? " · " + c.error + " feil" : "") + (c.warn ? " · " + c.warn + " obs" : "");
+  }
   if(t.status === "failed") return "Feil: " + (t.error || "ukjent");
   if(t.status === "needs_review") return "Svar må kontrolleres";
   if(t.status === "done") return "Sist: ferdig";
@@ -133,7 +143,7 @@ function buildNodes(types, tasks){
     return {type, name, status: TASK_STATE[latest.status] || "", task: taskText(latest), planned: false};
   });
   for(const name of PLANNED){
-    if(nodes.length >= SLOTS) break;
+    if(nodes.length >= MIN_SLOTS) break;
     if(!nodes.some(n => n.name === name)) nodes.push({name, status: "", task: "Planlagt", planned: true});
   }
   return nodes.slice(0, SLOTS);
@@ -163,6 +173,7 @@ function render(nodes){
     el.style.left = x + "%"; el.style.top = y + "%";
     const abbr = String(a.name).slice(0, 2).toUpperCase();
     el.innerHTML = `<div class="orb">${esc(abbr)}</div><div class="label">${esc(a.name)}</div><div class="task">${esc(a.task || "—")}</div>`;
+    if(a.type === "fronter"){ el.style.cursor = "pointer"; el.title = "Vis fronter"; el.addEventListener("click", openFronter); }
     if(a.type === "rapport"){ el.style.cursor = "pointer"; el.title = "Vis saker"; el.addEventListener("click", openRapport); }
     stage.appendChild(el);
   });
@@ -181,6 +192,7 @@ async function load(){
     try{ tasks = await getJson("/api/coordinator/tasks"); }
     catch(e){ note = / 401$/.test(e.message) ? "Låst · trykk her og skriv inn koden" : "Oppgaver kunne ikke hentes"; locked = / 401$/.test(e.message); }
   }
+  LAST_TASKS = tasks;
   render(buildNodes(types, tasks));
   document.getElementById("foot").textContent = live
     ? (note || `Live fra koordinatoren · ${tasks.length} ${tasks.length === 1 ? "oppgave" : "oppgaver"} · oppdateres hvert 15. sekund`)
@@ -222,6 +234,39 @@ async function openRapport(){
 }
 document.getElementById("rpx").onclick = () => { document.getElementById("rp").hidden = true; };
 document.getElementById("rp").addEventListener("click", e => { if(e.target.id === "rp") e.target.hidden = true; });
+
+// Fronter: Make- og Railway-status per front, fra siste «fronter»-oppgave.
+function openFronter(){
+  const box = document.getElementById("rp"), body = document.getElementById("rpbody");
+  document.querySelector("#rp h2").textContent = "Fronter";
+  box.hidden = false;
+  const t = LAST_TASKS.find(x => x.type === "fronter" && x.result && x.result.items);
+  if(!t){ body.textContent = "Ingen statusdata ennå. Den planlagte jobben henter den hver morgen."; return; }
+  const LBL = {ok: "i orden", warn: "obs", error: "feil", paused: "pauset"};
+  const rows = t.result.items.slice().sort((a,b) => String(a.front).localeCompare(String(b.front))).map(i =>
+    `<tr><td>${esc(i.front)}</td><td>${esc(i.kind === "railway" ? "Railway" : "Make")}</td><td>${esc(i.name)}</td><td class="st-${esc(i.status)}">${LBL[i.status]}</td><td>${esc(i.detail || i.next || "")}</td></tr>`).join("");
+  body.innerHTML = `<p>Oppdatert ${esc(new Date(t.finishedAt || t.createdAt).toLocaleString("no-NO",{dateStyle:"short",timeStyle:"short"}))}</p><table><tr><th>Front</th><th>Type</th><th>Navn</th><th>Status</th><th>Merknad</th></tr>${rows}</table>`;
+}
+
+// Oppdater: kjør gull + rapport på nytt, last siden, vis morgenoppdateringen.
+async function doUpdate(){
+  const btn = document.getElementById("upd"), box = document.getElementById("rp"), body = document.getElementById("rpbody");
+  btn.disabled = true; btn.textContent = "Oppdaterer …";
+  const k = lsGet();
+  const h = {"content-type": "application/json"}; if(k) h["x-atlas-key"] = k;
+  try{
+    await Promise.all(["gold", "rapport"].map(type => fetch(BASE + "/api/coordinator/tasks", {method: "POST", headers: h, body: JSON.stringify({type, payload: {}})}).catch(() => null)));
+    await new Promise(r => setTimeout(r, 3500));
+    await load();
+    document.querySelector("#rp h2").textContent = "Oppdatering";
+    const r = await fetch(BASE + "/api/coordinator/briefing", {headers: k ? {"x-atlas-key": k} : {}, cache: "no-store"});
+    if(r.status === 401){ body.innerHTML = keyForm("Skriv inn koden"); const go = document.getElementById("rpgo"); if(go) go.onclick = () => { lsSet(document.getElementById("rpkey").value.trim()); doUpdate(); }; }
+    else { const j = await r.json(); body.innerHTML = `<pre>${esc(j.data.tekst)}</pre>`; }
+    box.hidden = false;
+  }catch(e){ body.textContent = "Kunne ikke hente oppdateringen."; box.hidden = false; }
+  btn.disabled = false; btn.textContent = "Oppdater";
+}
+document.getElementById("upd").addEventListener("click", doUpdate);
 
 // Koderegn i bakgrunnen (lett: ~30 bilder per sekund, pauser når fanen er skjult).
 (function rain(){

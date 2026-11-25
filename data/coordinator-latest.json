@@ -1,0 +1,41 @@
+{
+  "fronter": {
+    "taskId": "b288e2c4-9649-4e25-ab2d-5d3903c9c745",
+    "status": "done",
+    "finishedAt": "2026-11-25T21:07:44.965Z",
+    "check": {
+      "ok": true,
+      "problems": []
+    },
+    "result": {
+      "counts": {
+        "ok": 1,
+        "warn": 0,
+        "error": 0,
+        "paused": 0,
+        "total": 1
+      },
+      "byFront": {
+        "A": {
+          "ok": 1,
+          "warn": 0,
+          "error": 0,
+          "paused": 0,
+          "total": 1
+        }
+      },
+      "items": [
+        {
+          "front": "A",
+          "name": "n",
+          "kind": "railway",
+          "status": "ok",
+          "detail": "",
+          "next": null
+        }
+      ],
+      "attention": [],
+      "source": "Make + Railway"
+    }
+  }
+}
