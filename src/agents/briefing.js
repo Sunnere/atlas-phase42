@@ -16,6 +16,7 @@ function buildBriefing(latest, now = new Date()) {
   const rapport = latest.rapport && latest.rapport.result ? latest.rapport.result : null;
   const sosial = latest.sosial && latest.sosial.result ? latest.sosial.result : null;
   const okonomi = latest.okonomi && latest.okonomi.result ? latest.okonomi.result : null;
+  const trading = latest.trading && latest.trading.result ? latest.trading.result : null;
 
   const todo = [];
   if (gmail) {
@@ -27,6 +28,9 @@ function buildBriefing(latest, now = new Date()) {
   }
   if (fronter) {
     for (const a of fronter.attention) todo.push({ typ: a.status === "error" ? "feil" : "obs", tekst: `${a.front}: ${a.name}${a.detail ? " – " + a.detail : ""}` });
+  }
+  if (trading) {
+    for (const f of trading.flags.filter((x) => x.typ === "drift")) todo.push({ typ: "trading", tekst: f.tekst });
   }
   if (okonomi) {
     for (const f of okonomi.flags.filter((x) => x.typ === "moms")) todo.push({ typ: "moms", tekst: f.tekst });
@@ -52,10 +56,11 @@ function buildBriefing(latest, now = new Date()) {
     rapport: rapport ? { total: rapport.total, instances: rapport.instances, sistOppdatert: latest.rapport.finishedAt } : null,
     sosial: sosial ? { period: sosial.period, totals: sosial.totals, channels: sosial.channels, flags: sosial.flags, recommendation: sosial.recommendation, sistOppdatert: latest.sosial.finishedAt } : null,
     okonomi: okonomi ? { year: okonomi.year, total: okonomi.total, percent: okonomi.percent, vatLimit: okonomi.vatLimit, sources: okonomi.sources, flags: okonomi.flags, sistOppdatert: latest.okonomi.finishedAt } : null,
+    trading: trading ? { roboPct: trading.roboPct, spyPct: trading.spyPct, diffUsd: trading.diffUsd, diffNok: trading.diffNok, totals: trading.totals, positions: trading.positions.length, flags: trading.flags, sistOppdatert: latest.trading.finishedAt } : null,
     makeAnnonser: null, // kobles inn når Zernio-post-ID-er lagres i datastore
   };
 
-  const mangler = ["gmail", "calendar", "gold", "stripe", "fronter", "rapport", "sosial", "okonomi"].filter((t) => !latest[t]);
+  const mangler = ["gmail", "calendar", "gold", "stripe", "fronter", "rapport", "sosial", "okonomi", "trading"].filter((t) => !latest[t]);
 
   return {
     generatedAt: now.toISOString(),
@@ -115,6 +120,15 @@ function renderText(s, todo, mangler, now) {
   lines.push("📝 ATLAS Rapport");
   if (!s.rapport) lines.push("  Ingen data ennå.");
   else lines.push("  " + s.rapport.instances.map((i) => `${i.name}: ${i.ok ? i.total + " saker" : "ikke nådd"}`).join(" · "));
+  lines.push("");
+
+  lines.push("📈 Trading (papirkonto)");
+  if (!s.trading) lines.push("  Ingen data ennå.");
+  else {
+    const t = s.trading;
+    lines.push(`  Roboten ${t.roboPct} % mot S&P 500 ${t.spyPct} % (${t.diffUsd >= 0 ? "+" : ""}${t.diffUsd} USD, ca. ${t.diffNok} kr), ${t.positions} posisjoner`);
+    for (const f of t.flags) lines.push(`  ⚠️ ${f.tekst}`);
+  }
   lines.push("");
 
   lines.push("💰 Økonomi (hittil i år)");

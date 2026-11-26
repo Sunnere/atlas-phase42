@@ -10,6 +10,7 @@ const { assessRapport, checkRapport } = require("./handlers/rapportAgent");
 const { assessFronter, checkFronter } = require("./handlers/fronterAgent");
 const { assessSosial, checkSosial } = require("./handlers/sosialAgent");
 const { assessOkonomi, checkOkonomi } = require("./handlers/okonomiAgent");
+const { assessTrading, checkTrading } = require("./handlers/tradingAgent");
 const store = require("./store");
 
 const tasks = new Map();
@@ -27,6 +28,7 @@ const handlers = {
   fronter: (payload) => assessFronter(payload),
   sosial: (payload) => assessSosial(payload),
   okonomi: (payload) => assessOkonomi(payload),
+  trading: (payload) => assessTrading(payload),
 };
 
 const RATINGS = ["GRØNN", "ORANSJE", "RØD", "GRÅ (for kort historikk)"];
@@ -54,6 +56,8 @@ function check(type, result) {
     problems.push(...checkStripe(result));
   } else if (type === "rapport") {
     problems.push(...checkRapport(result));
+  } else if (type === "trading") {
+    problems.push(...checkTrading(result));
   } else if (type === "okonomi") {
     problems.push(...checkOkonomi(result));
   } else if (type === "sosial") {

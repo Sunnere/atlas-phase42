@@ -103,7 +103,7 @@ const REFRESH_MS = 15000;
 const SLOTS = 12;
 const MIN_SLOTS = 8;
 let LAST_TASKS = [];
-const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent", stripe: "Stripe", rapport: "ATLAS Rapport", fronter: "Fronter", sosial: "Sosiale medier", okonomi: "Økonomi"};
+const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent", stripe: "Stripe", rapport: "ATLAS Rapport", fronter: "Fronter", sosial: "Sosiale medier", okonomi: "Økonomi", trading: "Trading"};
 // Planlagte agenter fra veikartet; vises stiplet til de er registrert i koordinatoren.
 const PLANNED = ["Regnskap", "Fond-monitor", "Stripe", "Kalender", "Adtraction", "Morgenbrief"];
 const TASK_STATE = {queued: "working", running: "working", done: "ok", needs_review: "waiting", failed: "error"};
@@ -122,6 +122,9 @@ async function getJson(path){
 function taskText(t){
   if(t.type === "rapport" && t.result && Array.isArray(t.result.instances) && t.status !== "failed"){
     return t.result.instances.map(i => i.name + " " + (i.ok ? i.total : "?")).join(" · ");
+  }
+  if(t.type === "trading" && t.result && t.result.totals && t.status !== "failed"){
+    return "Robot " + t.result.roboPct + " % · SPY " + t.result.spyPct + " %";
   }
   if(t.type === "okonomi" && t.result && t.result.sources && t.status !== "failed"){
     return t.result.total.toLocaleString("no-NO") + " kr · " + t.result.percent + " % av moms";
@@ -180,6 +183,7 @@ function render(nodes){
     el.style.left = x + "%"; el.style.top = y + "%";
     const abbr = String(a.name).slice(0, 2).toUpperCase();
     el.innerHTML = `<div class="orb">${esc(abbr)}</div><div class="label">${esc(a.name)}</div><div class="task">${esc(a.task || "—")}</div>`;
+    if(a.type === "trading"){ el.style.cursor = "pointer"; el.title = "Vis trading"; el.addEventListener("click", openTrading); }
     if(a.type === "okonomi"){ el.style.cursor = "pointer"; el.title = "Vis økonomi"; el.addEventListener("click", openOkonomi); }
     if(a.type === "sosial"){ el.style.cursor = "pointer"; el.title = "Vis sosiale medier"; el.addEventListener("click", openSosial); }
     if(a.type === "fronter"){ el.style.cursor = "pointer"; el.title = "Vis fronter"; el.addEventListener("click", openFronter); }
@@ -255,6 +259,27 @@ function openFronter(){
   const rows = t.result.items.slice().sort((a,b) => String(a.front).localeCompare(String(b.front))).map(i =>
     `<tr><td>${esc(i.front)}</td><td>${esc(i.kind === "railway" ? "Railway" : "Make")}</td><td>${esc(i.name)}</td><td class="st-${esc(i.status)}">${LBL[i.status]}</td><td>${esc(i.detail || i.next || "")}</td></tr>`).join("");
   body.innerHTML = `<p>Oppdatert ${esc(new Date(t.finishedAt || t.createdAt).toLocaleString("no-NO",{dateStyle:"short",timeStyle:"short"}))}</p><table><tr><th>Front</th><th>Type</th><th>Navn</th><th>Status</th><th>Merknad</th></tr>${rows}</table>`;
+}
+
+// Trading: aksjeroboten (papirkonto) mot S&P 500, posisjoner og driftsstatus.
+function openTrading(){
+  const box = document.getElementById("rp"), body = document.getElementById("rpbody");
+  document.querySelector("#rp h2").textContent = "Trading (papirkonto)";
+  box.hidden = false;
+  const t = LAST_TASKS.find(x => x.type === "trading" && x.result && x.result.totals);
+  if(!t){ body.textContent = "Ingen data ennå. Feederen kjører etter roboten kl. 16:00 på hverdager."; return; }
+  const r = t.result, usd = n => "$" + Number(n).toLocaleString("no-NO"), pct = n => (n > 0 ? "+" : "") + n + " %";
+  const cls = n => n < 0 ? "st-error" : "st-ok";
+  const pos = r.positions.map(x => `<tr><td>${esc(x.sym)}</td><td>${x.qty}</td><td>${usd(x.costUsd)}</td><td>${usd(x.valueUsd)}${x.priced ? "" : " *"}</td><td class="${cls(x.pnlPct)}">${pct(x.pnlPct)}</td></tr>`).join("");
+  const sold = r.sold.map(x => `<tr><td>${esc(x.sym)}</td><td>${x.qty}</td><td>${usd(x.costUsd)}</td><td>${usd(x.proceedsUsd)}</td><td class="${cls(x.pnlPct)}">${pct(x.pnlPct)}</td></tr>`).join("");
+  const flags = r.flags.map(f => `<p class="st-warn">⚠ ${esc(f.tekst)}</p>`).join("");
+  const h = r.health;
+  body.innerHTML = `<p>Robot <b class="${cls(r.roboPct)}">${pct(r.roboPct)}</b> · S&amp;P 500 ${pct(r.spyPct)} · forskjell <b class="${cls(r.diffUsd)}">${r.diffUsd >= 0 ? "+" : ""}${usd(r.diffUsd)}</b> (ca. ${r.diffNok.toLocaleString("no-NO")} kr)</p>
+  <p>Satt inn ${usd(r.totals.costUsd)} · verdt nå ${usd(r.totals.valueUsd)} · samme beløp i SPY ${usd(r.totals.spyUsd)}</p>
+  <h3>Eier nå</h3><table><tr><th>Aksje</th><th>Ant</th><th>Kostet</th><th>Verdt</th><th>Endring</th></tr>${pos || "<tr><td colspan=5>Ingen</td></tr>"}</table>
+  <h3>Solgt</h3><table><tr><th>Aksje</th><th>Ant</th><th>Kostet</th><th>Fikk</th><th>Endring</th></tr>${sold || "<tr><td colspan=5>Ingen</td></tr>"}</table>
+  <p>Siste kjøring: ${esc(h.lastRunMessage || h.lastRunStatus)} · signaler ${h.signalRows === null ? "?" : h.signalRows} rader, ${h.signalsAgeHours === null ? "?" : Math.round(h.signalsAgeHours)} t gamle</p>${flags}
+  <p style="opacity:.7">Papirkonto. Tallene er målt mot S&amp;P 500 og er verken råd eller bevis for strategien. * = kurs mangler, verdsatt til kjøpspris.</p>`;
 }
 
 // Økonomi: inntekt hittil i år per kilde og momsgrensen.

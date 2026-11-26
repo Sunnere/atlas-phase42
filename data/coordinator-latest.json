@@ -1,8 +1,8 @@
 {
   "fronter": {
-    "taskId": "063757ba-1e59-4525-95f7-c020a654bfa9",
+    "taskId": "2757641e-3060-4561-a583-12cfb6266d85",
     "status": "done",
-    "finishedAt": "2026-11-26T09:23:35.049Z",
+    "finishedAt": "2026-11-26T16:12:23.541Z",
     "check": {
       "ok": true,
       "problems": []
@@ -39,9 +39,9 @@
     }
   },
   "sosial": {
-    "taskId": "6c7dab58-f658-4578-9b31-4a757fc36e8a",
+    "taskId": "b30b18dd-09f7-4c5a-bf76-e8b043201060",
     "status": "done",
-    "finishedAt": "2026-11-26T09:23:34.583Z",
+    "finishedAt": "2026-11-26T16:12:23.078Z",
     "check": {
       "ok": true,
       "problems": []
@@ -77,9 +77,9 @@
     }
   },
   "okonomi": {
-    "taskId": "c0a257ce-7c66-4bcb-8ad2-5bf032c038f8",
+    "taskId": "dbff1dc4-1f78-409a-8054-59f492b6fb95",
     "status": "done",
-    "finishedAt": "2026-11-26T09:23:34.097Z",
+    "finishedAt": "2026-11-26T16:12:22.618Z",
     "check": {
       "ok": true,
       "problems": []
@@ -100,6 +100,79 @@
       "percent": 0,
       "flags": [],
       "source": "Stripe + e-post"
+    }
+  },
+  "trading": {
+    "taskId": "26e01d04-0cba-4190-b6ab-850f62992ef0",
+    "status": "done",
+    "finishedAt": "2026-11-26T16:12:22.140Z",
+    "check": {
+      "ok": true,
+      "problems": []
+    },
+    "result": {
+      "asOf": "2026-11-26T16:00:00",
+      "usdNok": 10,
+      "totals": {
+        "costUsd": 3117,
+        "valueUsd": 2969,
+        "spyUsd": 2988
+      },
+      "roboPct": -4.7,
+      "spyPct": -4.1,
+      "diffUsd": -19,
+      "diffPct": -0.6,
+      "diffNok": -190,
+      "positions": [
+        {
+          "sym": "TM",
+          "qty": 2,
+          "costUsd": 433,
+          "valueUsd": 432,
+          "pnlPct": -0.2,
+          "priced": true
+        },
+        {
+          "sym": "TSM",
+          "qty": 1,
+          "costUsd": 417,
+          "valueUsd": 342,
+          "pnlPct": -18,
+          "priced": true
+        }
+      ],
+      "sold": [
+        {
+          "sym": "BABA",
+          "qty": 1,
+          "costUsd": 103,
+          "proceedsUsd": 81,
+          "pnlPct": -21.4
+        }
+      ],
+      "worst": {
+        "sym": "TSM",
+        "qty": 1,
+        "costUsd": 417,
+        "valueUsd": 342,
+        "pnlPct": -18,
+        "priced": true
+      },
+      "health": {
+        "lastRunStatus": "ingen_handler",
+        "lastRunMessage": "Ingen handler i dag.",
+        "hoursSinceRun": 2,
+        "signalsAgeHours": 3,
+        "signalRows": 50,
+        "hoursSinceOrder": 30
+      },
+      "flags": [
+        {
+          "typ": "tap",
+          "tekst": "TSM er -18 % fra kjøpskurs."
+        }
+      ],
+      "source": "IBKR papirkonto + Nordnet-kurser"
     }
   }
 }
