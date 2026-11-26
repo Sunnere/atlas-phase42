@@ -103,7 +103,7 @@ const REFRESH_MS = 15000;
 const SLOTS = 12;
 const MIN_SLOTS = 8;
 let LAST_TASKS = [];
-const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent", stripe: "Stripe", rapport: "ATLAS Rapport", fronter: "Fronter", sosial: "Sosiale medier"};
+const DISPLAY = {risk: "Risk-agent", regnskap: "Regnskap", fund: "Fond-monitor", gmail: "Gmail", calendar: "Kalender", gold: "Gull-agent", stripe: "Stripe", rapport: "ATLAS Rapport", fronter: "Fronter", sosial: "Sosiale medier", okonomi: "Økonomi"};
 // Planlagte agenter fra veikartet; vises stiplet til de er registrert i koordinatoren.
 const PLANNED = ["Regnskap", "Fond-monitor", "Stripe", "Kalender", "Adtraction", "Morgenbrief"];
 const TASK_STATE = {queued: "working", running: "working", done: "ok", needs_review: "waiting", failed: "error"};
@@ -122,6 +122,9 @@ async function getJson(path){
 function taskText(t){
   if(t.type === "rapport" && t.result && Array.isArray(t.result.instances) && t.status !== "failed"){
     return t.result.instances.map(i => i.name + " " + (i.ok ? i.total : "?")).join(" · ");
+  }
+  if(t.type === "okonomi" && t.result && t.result.sources && t.status !== "failed"){
+    return t.result.total.toLocaleString("no-NO") + " kr · " + t.result.percent + " % av moms";
   }
   if(t.type === "sosial" && t.result && t.result.totals && t.status !== "failed"){
     const x = t.result.totals;
@@ -177,6 +180,7 @@ function render(nodes){
     el.style.left = x + "%"; el.style.top = y + "%";
     const abbr = String(a.name).slice(0, 2).toUpperCase();
     el.innerHTML = `<div class="orb">${esc(abbr)}</div><div class="label">${esc(a.name)}</div><div class="task">${esc(a.task || "—")}</div>`;
+    if(a.type === "okonomi"){ el.style.cursor = "pointer"; el.title = "Vis økonomi"; el.addEventListener("click", openOkonomi); }
     if(a.type === "sosial"){ el.style.cursor = "pointer"; el.title = "Vis sosiale medier"; el.addEventListener("click", openSosial); }
     if(a.type === "fronter"){ el.style.cursor = "pointer"; el.title = "Vis fronter"; el.addEventListener("click", openFronter); }
     if(a.type === "rapport"){ el.style.cursor = "pointer"; el.title = "Vis saker"; el.addEventListener("click", openRapport); }
@@ -251,6 +255,19 @@ function openFronter(){
   const rows = t.result.items.slice().sort((a,b) => String(a.front).localeCompare(String(b.front))).map(i =>
     `<tr><td>${esc(i.front)}</td><td>${esc(i.kind === "railway" ? "Railway" : "Make")}</td><td>${esc(i.name)}</td><td class="st-${esc(i.status)}">${LBL[i.status]}</td><td>${esc(i.detail || i.next || "")}</td></tr>`).join("");
   body.innerHTML = `<p>Oppdatert ${esc(new Date(t.finishedAt || t.createdAt).toLocaleString("no-NO",{dateStyle:"short",timeStyle:"short"}))}</p><table><tr><th>Front</th><th>Type</th><th>Navn</th><th>Status</th><th>Merknad</th></tr>${rows}</table>`;
+}
+
+// Økonomi: inntekt hittil i år per kilde og momsgrensen.
+function openOkonomi(){
+  const box = document.getElementById("rp"), body = document.getElementById("rpbody");
+  document.querySelector("#rp h2").textContent = "Økonomi";
+  box.hidden = false;
+  const t = LAST_TASKS.find(x => x.type === "okonomi" && x.result && x.result.sources);
+  if(!t){ body.textContent = "Ingen data ennå. Jobben kjører hver mandag morgen."; return; }
+  const r = t.result, fmt = n => n.toLocaleString("no-NO") + " kr";
+  const rows = r.sources.map(s => `<tr><td>${esc(s.name)}</td><td>${s.status === "ok" ? fmt(s.amountNok) : "–"}</td><td>${s.status === "ok" ? s.count : ""}</td><td class="${s.status === "ok" ? "st-ok" : "st-warn"}">${s.status === "ok" ? "ok" : "mangler"}</td><td>${esc(s.note || "")}</td></tr>`).join("");
+  const flags = r.flags.map(f => `<p class="st-warn">⚠ ${esc(f.tekst)}</p>`).join("");
+  body.innerHTML = `<p>${r.year}: <b>${fmt(r.total)}</b> = ${r.percent} % av momsgrensen (${fmt(r.vatLimit)})</p><table><tr><th>Kilde</th><th>Beløp</th><th>Antall</th><th>Status</th><th>Merknad</th></tr>${rows}</table>${flags}`;
 }
 
 // Sosiale medier: ukentlige tall fra Buffer og kort anbefaling.

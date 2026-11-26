@@ -1,8 +1,8 @@
 {
   "fronter": {
-    "taskId": "0f64c9c0-f56b-4175-95eb-1b4a31352e57",
+    "taskId": "063757ba-1e59-4525-95f7-c020a654bfa9",
     "status": "done",
-    "finishedAt": "2026-11-25T22:45:12.690Z",
+    "finishedAt": "2026-11-26T09:23:35.049Z",
     "check": {
       "ok": true,
       "problems": []
@@ -39,9 +39,9 @@
     }
   },
   "sosial": {
-    "taskId": "6d681cb3-a489-4077-8067-f7c2f679952c",
+    "taskId": "6c7dab58-f658-4578-9b31-4a757fc36e8a",
     "status": "done",
-    "finishedAt": "2026-11-25T22:45:12.222Z",
+    "finishedAt": "2026-11-26T09:23:34.583Z",
     "check": {
       "ok": true,
       "problems": []
@@ -74,6 +74,32 @@
       "flags": [],
       "recommendation": "",
       "source": "Buffer"
+    }
+  },
+  "okonomi": {
+    "taskId": "c0a257ce-7c66-4bcb-8ad2-5bf032c038f8",
+    "status": "done",
+    "finishedAt": "2026-11-26T09:23:34.097Z",
+    "check": {
+      "ok": true,
+      "problems": []
+    },
+    "result": {
+      "year": 2026,
+      "sources": [
+        {
+          "name": "Stripe",
+          "amountNok": 10,
+          "count": 0,
+          "status": "ok",
+          "note": ""
+        }
+      ],
+      "total": 10,
+      "vatLimit": 50000,
+      "percent": 0,
+      "flags": [],
+      "source": "Stripe + e-post"
     }
   }
 }
